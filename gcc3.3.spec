@@ -323,7 +323,7 @@ BuildRequires:	%{name}-gnat >= 3.1, %{libgnat_name} >= 3.1
 Requires:	%{name}-cpp = %{version}-%{release}
 Requires:	%{libgcc_name_orig} >= %{version}-%{release}
 Prereq:		info-install
-Prereq:		/usr/sbin/update-alternatives
+Prereq:		update-alternatives
 BuildRequires:	gettext, flex, bison
 BuildRequires:	texinfo >= 4.1
 # Make sure pthread.h doesn't contain __thread keyword
@@ -386,7 +386,7 @@ Provides:	gcc%{branch}-c++ = %{version}-%{release}
 Requires:	%{name} = %{version}-%{release}
 Requires:	%{libstdcxx_name} = %{version}
 Requires:	%{libstdcxx_name}-devel = %{version}
-Prereq:		/usr/sbin/update-alternatives
+Prereq:		update-alternatives
 
 %description c++
 This package adds C++ support to the GNU C compiler. It includes support
@@ -592,7 +592,7 @@ Requires:	%{name} = %{version}-%{release}
 Requires:	%{GCJ_TOOLS} = %{version}-%{release}
 Requires:	%{libgcj_name} >= %{version}
 Requires:	%{libgcj_name}-devel >= %{version}
-Prereq:		/usr/sbin/update-alternatives
+Prereq:		update-alternatives
 
 %description java
 This package adds experimental support for compiling Java(tm) programs
@@ -617,7 +617,7 @@ Provides:	%{cross_prefix}gcj-tools = %{version}-%{release}
 Requires:	%{libgcj_name} >= %{version}
 Requires:	%{libgcj_name}-devel >= %{version}
 Conflicts:	kaffe < 1.0.7-3mdk
-Prereq:		/usr/sbin/update-alternatives
+Prereq:		update-alternatives
 
 %description -n %{GCJ_TOOLS}
 This package includes Java related tools built from gcc %{version}:
@@ -708,7 +708,7 @@ Obsoletes:	gcc%{branch}-cpp
 Provides:	gcc%{branch}-cpp = %{version}-%{release}
 %endif
 Prereq:		info-install
-Prereq:		/usr/sbin/update-alternatives
+Prereq:		update-alternatives
 
 %description cpp
 The C preprocessor is a 'macro processor' which is used automatically
@@ -751,7 +751,7 @@ Obsoletes:	gcc%{branch}-colorgcc
 Provides:	gcc%{branch}-colorgcc = %{version}-%{release}
 %endif
 Requires:	%{name} = %{version}
-PreReq:		/usr/sbin/update-alternatives
+PreReq:		update-alternatives
 Requires:	perl
 
 %description colorgcc
