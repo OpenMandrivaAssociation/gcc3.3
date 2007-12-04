@@ -2,7 +2,7 @@
 %define branch			3.3
 %define branch_tag		%(perl -e 'printf "%%02d%%02d", split(/\\./,shift)' %{branch})
 %define version			3.3.6
-%define release			3mdk
+%define release			 %mkrel 3
 %define biarches		x86_64 ppc64
 
 %define hammer_branch		1
