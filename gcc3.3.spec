@@ -322,7 +322,7 @@ BuildRequires:	%{name}-gnat >= 3.1, %{libgnat_name} >= 3.1
 %endif
 Requires:	%{name}-cpp = %{version}-%{release}
 Requires:	%{libgcc_name_orig} >= %{version}-%{release}
-Prereq:		/sbin/install-info
+Prereq:		info-install
 Prereq:		/usr/sbin/update-alternatives
 BuildRequires:	gettext, flex, bison
 BuildRequires:	texinfo >= 4.1
@@ -707,7 +707,7 @@ Group:		Development/C
 Obsoletes:	gcc%{branch}-cpp
 Provides:	gcc%{branch}-cpp = %{version}-%{release}
 %endif
-Prereq:		/sbin/install-info
+Prereq:		info-install
 Prereq:		/usr/sbin/update-alternatives
 
 %description cpp
