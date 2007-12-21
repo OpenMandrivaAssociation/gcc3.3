@@ -305,6 +305,7 @@ Patch218: gcc33-ia64-libjava-locks.patch.bz2
 Patch219: gcc33-rhl-testsuite.patch.bz2
 Patch220: gcc33-libgcc34.patch.bz2
 
+BuildRoot:	%{_tmppath}/%{name}-%{version}-root
 # Want updated alternatives priorities
 %if %{build_cross}
 Conflicts:	gcc-cpp < 3.2.2-4mdk
