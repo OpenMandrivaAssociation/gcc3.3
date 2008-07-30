@@ -256,54 +256,54 @@ Source6:	gcc33-help2man.pl.bz2
 Source7:	build_cross_gcc3.3.sh
 
 # CVS patches
-Patch1: gcc33-hammer-%{hammer_date}.patch.bz2
-Patch2: gcc33-mdkoptions.patch.bz2
-Patch3: gcc33-pr11536-testcase.patch.bz2
-Patch4: gcc33-pr9929-testcase.patch.bz2
-Patch5: gcc33-gcse-volatile.patch.bz2
+Patch1: gcc33-hammer-%{hammer_date}.patch
+Patch2: gcc33-mdkoptions.patch
+Patch3: gcc33-pr11536-testcase.patch
+Patch4: gcc33-pr9929-testcase.patch
+Patch5: gcc33-gcse-volatile.patch
 
 # MDK patches
-Patch100: colorgcc-1.3.2-mdkconf.patch.bz2
-Patch101: gcc33-pass-slibdir.patch.bz2
-Patch102: gcc31-c++-diagnostic-no-line-wrapping.patch.bz2
-Patch103: gcc32-pr7434-testcase.patch.bz2
-Patch104: gcc33-pr8213-testcase.patch.bz2
-Patch106: gcc33-x86_64-biarch-testsuite.patch.bz2
-Patch107: gcc33-i386-mtune.patch.bz2
-Patch108: gcc33-ada-addr2line.patch.bz2
-Patch109: gcc33-ada-link.patch.bz2
-Patch110: gcc33-ada-makefile.patch.bz2
-Patch111: gcc33-multi-do-libdir.patch.bz2
-Patch112: gcc33-cross-gxx_include_dir.patch.bz2
-Patch113: gcc33-cross-inhibit_libc.patch.bz2
-Patch114: gcc32-mklibgcc-serialize-crtfiles.patch.bz2
-Patch115: gcc33-c++-classfn-member-template.patch.bz2
-Patch116: gcc33-gpc.patch.bz2
-Patch117: gcc33-gpc-serialize-build.patch.bz2
-Patch119: gcc33-pr11631.patch.bz2
-Patch120: gcc33-pr13179.patch.bz2
-Patch121: gcc33-no-store-motion.patch.bz2
-Patch122: gcc33-linux32.patch.bz2
-Patch123: gcc33-ppc64-_LP64.patch.bz2
-Patch124: gcc33-ppc-no-nof.patch.bz2
-Patch125: gcc33-cross-bootstrap-no-gcov-in-libgcc.patch.bz2
-Patch126: gcc33-ppc64-unwind-fixes.patch.bz2
+Patch100: colorgcc-1.3.2-mdkconf.patch
+Patch101: gcc33-pass-slibdir.patch
+Patch102: gcc31-c++-diagnostic-no-line-wrapping.patch
+Patch103: gcc32-pr7434-testcase.patch
+Patch104: gcc33-pr8213-testcase.patch
+Patch106: gcc33-x86_64-biarch-testsuite.patch
+Patch107: gcc33-i386-mtune.patch
+Patch108: gcc33-ada-addr2line.patch
+Patch109: gcc33-ada-link.patch
+Patch110: gcc33-ada-makefile.patch
+Patch111: gcc33-multi-do-libdir.patch
+Patch112: gcc33-cross-gxx_include_dir.patch
+Patch113: gcc33-cross-inhibit_libc.patch
+Patch114: gcc32-mklibgcc-serialize-crtfiles.patch
+Patch115: gcc33-c++-classfn-member-template.patch
+Patch116: gcc33-gpc.patch
+Patch117: gcc33-gpc-serialize-build.patch
+Patch119: gcc33-pr11631.patch
+Patch120: gcc33-pr13179.patch
+Patch121: gcc33-no-store-motion.patch
+Patch122: gcc33-linux32.patch
+Patch123: gcc33-ppc64-_LP64.patch
+Patch124: gcc33-ppc-no-nof.patch
+Patch125: gcc33-cross-bootstrap-no-gcov-in-libgcc.patch
+Patch126: gcc33-ppc64-unwind-fixes.patch
 
 # Red Hat patches
-Patch200: gcc33-2.96-RH-compat.patch.bz2
-Patch201: gcc33-fde-merge-compat.patch.bz2
-Patch202: gcc33-debug-pr7241.patch.bz2
-Patch205: gcc33-dwarf2-dtprel.patch.bz2
-Patch206: gcc33-trunc_int_for_mode.patch.bz2
-Patch209: gcc33-inline-label.patch.bz2
-Patch210: gcc33-ia64-symbol_ref_flags.patch.bz2
-Patch211: gcc33-cse-tweak.patch.bz2
-Patch212: gcc33-tls-direct-segment-addressing.patch.bz2
-Patch213: gcc33-pie.patch.bz2
-Patch216: gcc33-pr6794.patch.bz2
-Patch218: gcc33-ia64-libjava-locks.patch.bz2
-Patch219: gcc33-rhl-testsuite.patch.bz2
-Patch220: gcc33-libgcc34.patch.bz2
+Patch200: gcc33-2.96-RH-compat.patch
+Patch201: gcc33-fde-merge-compat.patch
+Patch202: gcc33-debug-pr7241.patch
+Patch205: gcc33-dwarf2-dtprel.patch
+Patch206: gcc33-trunc_int_for_mode.patch
+Patch209: gcc33-inline-label.patch
+Patch210: gcc33-ia64-symbol_ref_flags.patch
+Patch211: gcc33-cse-tweak.patch
+Patch212: gcc33-tls-direct-segment-addressing.patch
+Patch213: gcc33-pie.patch
+Patch216: gcc33-pr6794.patch
+Patch218: gcc33-ia64-libjava-locks.patch
+Patch219: gcc33-rhl-testsuite.patch
+Patch220: gcc33-libgcc34.patch
 
 BuildRoot:	%{_tmppath}/%{name}-%{version}-root
 # Want updated alternatives priorities
@@ -877,7 +877,10 @@ export PATH=$PATH:$PWD/bin
 
 # Make bootstrap-lean
 CC=gcc
-OPT_FLAGS=`echo $RPM_OPT_FLAGS|sed -e 's/-fno-rtti//g' -e 's/-fno-exceptions//g'`
+
+# Prepare OPT_FLAGS
+OPT_FLAGS=`echo $RPM_OPT_FLAGS|sed -e 's/-fno-rtti//g' -e 's/-fno-exceptions//g' -e 's/-mcpu=pentiumpro//g' -e 's/-Wp,-D_FORTIFY_SOURCE=2//g' -e 's/-fstack-protector//g' -e 's/--param=ssp-buffer-size=4//g'`
+
 %if %{build_debug}
 OPT_FLAGS=`echo "$OPT_FLAGS -g" | sed -e "s/-fomit-frame-pointer//g"`
 %endif
