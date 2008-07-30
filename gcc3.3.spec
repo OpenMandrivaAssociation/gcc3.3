@@ -854,8 +854,8 @@ patch -p0 < gcc/p/diffs/gcc-3.3.diff
 
 # MDKzification for bug reports
 perl -pi -e 's/3\.3\.3/3.3.2/' gcc/version.c
-perl -pi -e "/bug_report_url/ and s/\"[^\"]+\"/\"<URL:https:\/\/qa.mandrakesoft.com\/>\"/;" \
-         -e '/version_string/ and s/([0-9]*(\.[0-9]*){1,3}).*(\";)$/\1 \(Mandrakelinux %{mdk_version} %{version}-%{release}\)\3/;' \
+perl -pi -e "/bug_report_url/ and s/\"[^\"]+\"/\"<URL:https:\/\/qa.mandriva.com\/>\"/;" \
+         -e '/version_string/ and s/([0-9]*(\.[0-9]*){1,3}).*(\";)$/\1 \(Mandrivalinux %{mdk_version} %{version}-%{release}\)\3/;' \
          gcc/version.c
 
 # ColorGCC patch
