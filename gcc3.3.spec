@@ -15,7 +15,7 @@
 %define libgcc_major		1
 %define libstdcxx_major		5
 %define libstdcxx_minor		7
-%define libf2c_major		0
+%define libg2c_major		0
 %define libgcj_major		4
 %define libobjc_major		1
 %define libgnat_major		1
@@ -218,8 +218,8 @@
 %define libgcc_name		%{libgcc_name_orig}%{libgcc_major}
 %define libstdcxx_name_orig	%{cross_prefix}libstdc++
 %define libstdcxx_name		%{libstdcxx_name_orig}%{libstdcxx_major}
-%define libf2c_name_orig	%{cross_prefix}libf2c
-%define libf2c_name		%{libf2c_name_orig}%{libf2c_major}
+%define libg2c_name_orig	%{cross_prefix}libg2c
+%define libg2c_name		%{libg2c_name_orig}%{libg2c_major}
 %define libgcj_name_orig	%{cross_prefix}libgcj
 %define libgcj_name		%{libgcj_name_orig}%{libgcj_major}
 %define libobjc_name_orig	%{cross_prefix}libobjc
@@ -515,7 +515,7 @@ Obsoletes:	gcc%{branch}-g77
 Provides:	gcc%{branch}-g77 = %{version}-%{release}
 %endif
 Requires:	%{name} = %{version}-%{release}
-Requires:	%{libf2c_name_orig} = %{version}-%{release}
+Requires:	%{libg2c_name_orig} = %{version}-%{release}
 
 %description g77
 This package adds support for compiling Fortran 77 programs with the GNU
@@ -528,14 +528,14 @@ order to use the GNU Fortran 77 compiler version %{version}.
 ####################################################################
 # Fortran 77 Libraries
 
-%package -n %{libf2c_name}
+%package -n %{libg2c_name}
 Summary:	Fortran 77 runtime libraries
 Group:		System/Libraries
-Provides:	%{libf2c_name_orig} = %{version}
-Obsoletes:	%{libf2c_name_orig}%{branch}
-Provides:	%{libf2c_name_orig}%{branch} = %{version}-%{release}
+Provides:	%{libg2c_name_orig} = %{version}
+Obsoletes:	%{libg2c_name_orig}%{branch}
+Provides:	%{libg2c_name_orig}%{branch} = %{version}-%{release}
 
-%description -n %{libf2c_name}
+%description -n %{libg2c_name}
 This package contains Fortran 77 shared library which is needed to run
 Fortran 77 dynamically linked programs.
 
@@ -1213,7 +1213,7 @@ pushd $FULLPATH
 	DispatchLibs libobjc	%{libobjc_major}.0.0
 	%endif
 	%if %{build_fortran}
-	DispatchLibs libg2c	%{libf2c_major}.0.0
+	DispatchLibs libg2c	%{libg2c_major}.0.0
 	mv -f ../../../$crosslibdir/libfrtbegin.a libfrtbegin.a
 	[ -r "../../../32/libfrtbegin.a" ] &&
 	mv -f ../../../32/libfrtbegin.a 32/libfrtbegin.a
@@ -1599,10 +1599,10 @@ fi
 
 %if %{build_fortran}
 %if %mdkversion < 200900
-%post -n %{libf2c_name} -p /sbin/ldconfig
+%post -n %{libg2c_name} -p /sbin/ldconfig
 %endif
 %if %mdkversion < 200900
-%postun -n %{libf2c_name} -p /sbin/ldconfig
+%postun -n %{libg2c_name} -p /sbin/ldconfig
 %endif
 %endif
 
@@ -1912,14 +1912,14 @@ if [ "$1" = "0" ];then /sbin/install-info %{_infodir}/gcc%{_package_suffix}.info
 %endif
 
 %if %{build_fortran}
-%files -n %{libf2c_name}
+%files -n %{libg2c_name}
 %defattr(-,root,root)
 #
-%{target_libdir}/libg2c.so.%{libf2c_major}
-%{target_libdir}/libg2c.so.%{libf2c_major}.0.0
+%{target_libdir}/libg2c.so.%{libg2c_major}
+%{target_libdir}/libg2c.so.%{libg2c_major}.0.0
 %ifarch %{biarches}
-%{_prefix}/lib/libg2c.so.%{libf2c_major}
-%{_prefix}/lib/libg2c.so.%{libf2c_major}.0.0
+%{_prefix}/lib/libg2c.so.%{libg2c_major}
+%{_prefix}/lib/libg2c.so.%{libg2c_major}.0.0
 %endif
 %endif
 
