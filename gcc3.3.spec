@@ -879,7 +879,7 @@ export PATH=$PATH:$PWD/bin
 CC=gcc
 
 # Prepare OPT_FLAGS
-OPT_FLAGS=`echo $RPM_OPT_FLAGS|sed -e 's/-fno-rtti//g' -e 's/-fno-exceptions//g' -e 's/-mcpu=pentiumpro//g' -e 's/-Wp,-D_FORTIFY_SOURCE=2//g' -e 's/-fstack-protector//g' -e 's/--param=ssp-buffer-size=4//g'`
+OPT_FLAGS=`echo $RPM_OPT_FLAGS|sed -e 's/-fno-rtti//g' -e 's/-fno-exceptions//g' -e 's/-mcpu=pentiumpro//g' -e 's/-Wp,-D_FORTIFY_SOURCE=2//g' -e 's/-fstack-protector//g' -e 's/--param=ssp-buffer-size=4//g' -e 's/-mtune=generic//g'`
 
 %if %{build_debug}
 OPT_FLAGS=`echo "$OPT_FLAGS -g" | sed -e "s/-fomit-frame-pointer//g"`
