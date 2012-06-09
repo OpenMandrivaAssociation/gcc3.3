@@ -2,7 +2,7 @@
 %define branch			3.3
 %define branch_tag		%(perl -e 'printf "%%02d%%02d", split(/\\./,shift)' %{branch})
 %define version			3.3.6
-%define release			 %mkrel 5
+%define release			6
 %define biarches		x86_64 ppc64
 
 %define hammer_branch		1
@@ -322,7 +322,6 @@ BuildRequires:	%{name}-gnat >= 3.1, %{libgnat_name} >= 3.1
 %endif
 Requires:	%{name}-cpp = %{version}-%{release}
 Requires:	%{libgcc_name_orig} >= %{version}-%{release}
-Requires(post,preun):		info-install
 Requires(post,preun):		update-alternatives
 BuildRequires:	gettext, flex, bison
 BuildRequires:	texinfo >= 4.1
@@ -707,7 +706,6 @@ Group:		Development/C
 Obsoletes:	gcc%{branch}-cpp
 Provides:	gcc%{branch}-cpp = %{version}-%{release}
 %endif
-Requires(post,preun):		info-install
 Requires(post,preun):		update-alternatives
 
 %description cpp
@@ -1579,75 +1577,7 @@ if [ ! -d %{_includedir}/libgcj-%{version} ]; then
 fi
 %endif
 
-%if %{build_java}
-%if %mdkversion < 200900
-%post -n %{libgcj_name} -p /sbin/ldconfig
-%endif
-%if %mdkversion < 200900
-%postun -n %{libgcj_name} -p /sbin/ldconfig
-%endif
-%endif
-
-%if %{build_objc}
-%if %mdkversion < 200900
-%post -n %{libobjc_name} -p /sbin/ldconfig
-%endif
-%if %mdkversion < 200900
-%postun -n %{libobjc_name} -p /sbin/ldconfig
-%endif
-%endif
-
-%if %{build_fortran}
-%if %mdkversion < 200900
-%post -n %{libg2c_name} -p /sbin/ldconfig
-%endif
-%if %mdkversion < 200900
-%postun -n %{libg2c_name} -p /sbin/ldconfig
-%endif
-%endif
-
-%if %{build_ada}
-%if %mdkversion < 200900
-%post -n %{libgnat_name} -p /sbin/ldconfig
-%endif
-%if %mdkversion < 200900
-%postun -n %{libgnat_name} -p /sbin/ldconfig
-%endif
-%endif
-
-%post doc
-%_install_info gcc%{_package_suffix}.info
-%_install_info cpp%{_package_suffix}.info
-%if %{build_pascal}
-%_install_info gpc%{_package_suffix}.info
-%_install_info gpcs%{_package_suffix}.info
-%endif
-%if %{build_fortran}
-%_install_info g77%{_package_suffix}.info
-%endif
-%if %{build_ada}
-%_install_info gnat_rm%{_package_suffix}.info
-%_install_info gnat_ug%{_package_suffix}.info
-%endif
-
-%preun doc
-if [ "$1" = "0" ];then /sbin/install-info %{_infodir}/gcc%{_package_suffix}.info.bz2 --dir=%{_infodir}/dir --remove;fi;
-%_remove_install_info cpp%{_package_suffix}.info
-%if %{build_pascal}
-%_remove_install_info gpc%{_package_suffix}.info
-%_remove_install_info gpcs%{_package_suffix}.info
-%endif
-%if %{build_fortran}
-%_remove_install_info g77%{_package_suffix}.info
-%endif
-%if %{build_ada}
-%_remove_install_info gnat_rm%{_package_suffix}.info
-%_remove_install_info gnat_ug%{_package_suffix}.info
-%endif
-
 %files
-%defattr(-,root,root)
-#
 %doc gcc/README* gcc/*ChangeLog*
 %{_mandir}/man1/%{program_prefix}gcc%{program_suffix}.1*
 %if "%{name}" == "gcc"
