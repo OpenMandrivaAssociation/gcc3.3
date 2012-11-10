@@ -1,0 +1,14 @@
+--- gcc-3.3.6/gcc/libgcc2.c.cross-bootstrap-no-gcov-in-libgcc	2005-10-14 12:19:14.000000000 +0200
++++ gcc-3.3.6/gcc/libgcc2.c	2005-10-14 13:23:52.000000000 +0200
+@@ -1446,6 +1446,11 @@ __eprintf (const char *string, const cha
+ #endif
+ #endif
+ 
++#if defined(CROSS_COMPILE) && defined(inhibit_libc)
++/* Don't care about gcov in minimal bootstrap builds.  */
++#undef L_gcov
++#endif
++
+ #ifdef L_gcov
+ 
+ /* Gcov profile dumper. Requires atexit and stdio.  */

@@ -1,0 +1,21 @@
+2002-07-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/7241
+	* dwarf2out.c (base_type_die): Use DW_ATE_*_char even if main
+	variant is char_type_node and type name is char.
+
+--- gcc/dwarf2out.c.jj	Wed Jun 19 15:09:56 2002
++++ gcc/dwarf2out.c	Thu Jul 11 20:47:52 2002
+@@ -7335,9 +7335,11 @@ base_type_die (type)
+       /* Carefully distinguish the C character types, without messing
+          up if the language is not C. Note that we check only for the names
+          that contain spaces; other names might occur by coincidence in other
+-         languages.  */
++         languages, so we only check if main variant is char_type_node.  */
+       if (! (TYPE_PRECISION (type) == CHAR_TYPE_SIZE
+ 	     && (type == char_type_node
++		 || (TYPE_MAIN_VARIANT (type) == char_type_node
++		     && ! strcmp (type_name, "char"))
+ 		 || ! strcmp (type_name, "signed char")
+ 		 || ! strcmp (type_name, "unsigned char"))))
+ 	{

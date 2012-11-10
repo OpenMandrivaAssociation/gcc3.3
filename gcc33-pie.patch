@@ -1,0 +1,888 @@
+2003-06-03  Jakub Jelinek  <jakub@redhat.com>
+
+	* configure.in (HAVE_LD_PIE): Check for ld -pie.
+	* config.in: Rebuilt.
+	* configure: Rebuilt.
+	* toplev.c (flag_pie, flag_shlib): New variables.
+	(f_options): Add -fpie and -fPIE.
+	(parse_options_and_default_flags): Set flag_pic if -fpie/-fPIE.
+	Set flag_shlib if flag_pic and not -fpie/-fPIE.
+	* flags.h (flag_pic, flag_shlib): Add.
+	* varasm.c (default_binds_local_p): Use flag_shlib instead of
+	flag_pic.
+	* gcc.c (LINK_PIE_SPEC): Define.
+	(LINK_COMMAND_SPEC): Use LINK_PIE_SPEC.
+	(option_map): Add --pie -> -pie mapping.
+	* config/sol2.h (ASM_SPEC): Handle -fpie the same way as -fpic
+	and -fPIE the same way as -fPIC.
+	* config/openbsd.h (ASM_SPEC): Likewise.
+	* config/frv/frv.h (ASM_SPEC): Likewise.
+	* config/arm/linux-gas.h (SUBTARGET_CPP_SPEC): Likewise.
+	* config/arm/semi.h (ASM_SPEC): Likewise.
+	* config/arm/netbsd-elf.h (SUBTARGET_EXTRA_ASM_SPEC): Likewise.
+	* config/freebsd-spec.h (FBSD_CPP_SPEC): Likewise.
+	* config/i386/beos-elf.h (CC1_SPEC): Likewise.
+	* config/i386/freebsd-aout.h (ASM_SPEC): Likewise.
+	* config/i386/sco5.h (CPP_SPEC, LINK_SPEC): Likewise.
+	* config/m68k/linux.h (CPP_SPEC): Likewise.
+	* config/m68k/linux-aout.h (ASM_SPEC): Likewise.
+	* config/m68k/netbsd.h (ASM_SPEC): Likewise.
+	* config/m68k/openbsd.h (ASM_SPEC): Likewise.
+	* config/m68k/netbsd-elf.h (ASM_SPEC): Likewise.
+	* config/m68k/sun2.h (ASM_SPEC): Likewise.
+	* config/m68k/sun3.h (ASM_SPEC): Likewise.
+	* config/mips/linux.h (SUBTARGET_CPP_SPEC): Likewise.
+	* config/mips/openbsd.h (SUBTARGET_ASM_SPEC): Likewise.
+	* config/pa/pa-linux.h (CPP_SPEC): Likewise.
+	* config/netbsd-aout.h (ASM_SPEC): Likewise.
+	* config/rs6000/sysv4.h (ASM_SPEC): Likewise.
+	* config/rs6000/linux64.h (ASM_SPEC32): Likewise.
+	* config/sparc/linux.h (CPP_SUBTARGET_SPEC, ASM_SPEC): Likewise.
+	* config/sparc/linux64.h (CPP_SUBTARGET_SPEC, ASM_SPEC): Likewise.
+	* config/sparc/sparc.h (ASM_SPEC): Likewise.
+	* config/sparc/sp64-elf.h (ASM_SPEC): Likewise.
+	* config/sparc/sysv4.h (ASM_SPEC): Likewise.
+	* config/sparc/netbsd-elf.h (ASM_SPEC): Likewise.
+	* config/sparc/openbsd64.h (ASM_SPEC): Likewise.
+	* config/sparc/hal.h (ASM_SPEC): Likewise.
+	* config/sparc/linux-aout.h (ASM_SPEC, CPP_SUBTARGET_SPEC): Likewise.
+	* config/sparc/vxsim.h (ASM_SPEC): Likewise.
+	* config/cris/linux.h (CRIS_ASM_SUBTARGET_SPEC): Likewise.
+	* config/linux.h (STARTFILE_SPEC, ENDFILE_SPEC): Handle -pie.
+	* config/alpha/elf.h (STARTFILE_SPEC, ENDFILE_SPEC): Likewise.
+	* config/ia64/linux.h (STARTFILE_SPEC, ENDFILE_SPEC): Likewise.
+	* config/rs6000/sysv4.h (STARTFILE_SPEC, ENDFILE_SPEC): Likewise.
+	* config/sparc/linux.h (STARTFILE_SPEC, ENDFILE_SPEC): Likewise.
+	* config/sparc/linux64.h (STARTFILE_SPEC, ENDFILE_SPEC): Likewise.
+	* config/i386/linux64.h (STARTFILE_SPEC, ENDFILE_SPEC): Remove.
+	* doc/invoke.texi: Document -pie, -fpie and -fPIE options.
+
+--- gcc-3.3.2/gcc/config/alpha/elf.h.pie	2003-12-15 16:03:35.000000000 +0100
++++ gcc-3.3.2/gcc/config/alpha/elf.h	2003-12-15 16:03:40.000000000 +0100
+@@ -409,11 +409,19 @@ void FN ()					\
+    before entering `main'.   */
+ 
+ #undef	STARTFILE_SPEC
++#ifdef HAVE_LD_PIE
++#define STARTFILE_SPEC \
++  "%{!shared: \
++     %{pg:gcrt1.o%s} %{!pg:%{p:gcrt1.o%s} %{!p:%{pie:Scrt1.o%s}%{!pie:crt1.o%s}}}}\
++   crti.o%s %{static:crtbeginT.o%s}\
++   %{!static:%{shared|pie:crtbeginS.o%s}%{!shared:%{!pie:crtbegin.o%s}}}"
++#else
+ #define STARTFILE_SPEC \
+   "%{!shared: \
+      %{pg:gcrt1.o%s} %{!pg:%{p:gcrt1.o%s} %{!p:crt1.o%s}}}\
+    crti.o%s %{static:crtbeginT.o%s}\
+-   %{!static:%{shared:crtbeginS.o%s}%{!shared:crtbegin.o%s}}"
++   %{!static:%{shared|pie:crtbeginS.o%s}%{!shared:%{!pie:crtbegin.o%s}}}"
++#endif
+ 
+ /* Provide a ENDFILE_SPEC appropriate for ELF.  Here we tack on the
+    magical crtend.o file which provides part of the support for
+@@ -423,7 +431,7 @@ void FN ()					\
+ #undef	ENDFILE_SPEC
+ #define ENDFILE_SPEC \
+   "%{ffast-math|funsafe-math-optimizations:crtfastmath.o%s} \
+-   %{shared:crtendS.o%s}%{!shared:crtend.o%s} crtn.o%s"
++   %{shared|pie:crtendS.o%s}%{!shared:%{!pie:crtend.o%s}} crtn.o%s"
+ 
+ /* We support #pragma.  */
+ #define HANDLE_SYSV_PRAGMA 1
+--- gcc-3.3.2/gcc/config/arm/linux-gas.h.pie	2002-09-15 20:24:04.000000000 +0200
++++ gcc-3.3.2/gcc/config/arm/linux-gas.h	2003-12-15 16:03:40.000000000 +0100
+@@ -31,7 +31,7 @@ Boston, MA 02111-1307, USA.  */
+ #define DEFAULT_SIGNED_CHAR 0
+ 
+ #undef  SUBTARGET_CPP_SPEC
+-#define SUBTARGET_CPP_SPEC  "%{posix:-D_POSIX_SOURCE} %{fPIC:-D__PIC__ -D__pic__} %{fpic:-D__PIC__ -D__pic__}"
++#define SUBTARGET_CPP_SPEC  "%{posix:-D_POSIX_SOURCE} %{fPIC|fPIE:-D__PIC__ -D__pic__} %{fpic|fpie:-D__PIC__ -D__pic__}"
+ 
+ #undef  SIZE_TYPE
+ #define SIZE_TYPE "unsigned int"
+--- gcc-3.3.2/gcc/config/arm/semi.h.pie	2002-05-20 19:07:04.000000000 +0200
++++ gcc-3.3.2/gcc/config/arm/semi.h	2003-12-15 16:03:40.000000000 +0100
+@@ -59,7 +59,7 @@ Boston, MA 02111-1307, USA.  */
+    binutils can't.  */
+ #ifndef ASM_SPEC
+ #define ASM_SPEC "\
+-%{fpic: -k} %{fPIC: -k} \
++%{fpic|fpie: -k} %{fPIC|fPIE: -k} \
+ %{mbig-endian:-EB} \
+ %{mcpu=*:-mcpu=%*} \
+ %{march=*:-march=%*} \
+--- gcc-3.3.2/gcc/config/arm/netbsd-elf.h.pie	2002-11-21 22:39:17.000000000 +0100
++++ gcc-3.3.2/gcc/config/arm/netbsd-elf.h	2003-12-15 16:03:40.000000000 +0100
+@@ -59,7 +59,7 @@ Boston, MA 02111-1307, USA.  */
+ 
+ #undef SUBTARGET_EXTRA_ASM_SPEC
+ #define SUBTARGET_EXTRA_ASM_SPEC	\
+-  "-matpcs %{fpic:-k} %{fPIC:-k}"
++  "-matpcs %{fpic|fpie:-k} %{fPIC|fPIE:-k}"
+ 
+ /* Default floating point model is soft-VFP.
+    FIXME: -mhard-float currently implies FPA.  */
+--- gcc-3.3.2/gcc/config/cris/linux.h.pie	2003-03-11 04:01:35.000000000 +0100
++++ gcc-3.3.2/gcc/config/cris/linux.h	2003-12-15 16:03:40.000000000 +0100
+@@ -60,7 +60,7 @@ Boston, MA 02111-1307, USA.  */
+ #define CRIS_ASM_SUBTARGET_SPEC \
+  "--em=criself\
+   %{!fleading-underscore:--no-underscore}\
+-  %{fPIC|fpic: --pic}"
++  %{fPIC|fpic|fPIE|fpie: --pic}"
+ 
+ /* Provide a legacy -mlinux option.  */
+ #undef CRIS_SUBTARGET_SWITCHES
+--- gcc-3.3.2/gcc/config/frv/frv.h.pie	2003-12-15 16:03:35.000000000 +0100
++++ gcc-3.3.2/gcc/config/frv/frv.h	2003-12-15 16:03:40.000000000 +0100
+@@ -86,7 +86,7 @@
+     %{mmedia} %{mno-media} \
+     %{mmuladd} %{mno-muladd} \
+     %{mpack} %{mno-pack} \
+-    %{fpic: -mpic} %{fPIC: -mPIC} %{mlibrary-pic}}"
++    %{fpic|fpie: -mpic} %{fPIC|fPIE: -mPIC} %{mlibrary-pic}}"
+ 
+ /* Another C string constant used much like `LINK_SPEC'.  The difference
+    between the two is that `STARTFILE_SPEC' is used at the very beginning of
+--- gcc-3.3.2/gcc/config/i386/beos-elf.h.pie	2002-11-15 15:57:11.000000000 +0100
++++ gcc-3.3.2/gcc/config/i386/beos-elf.h	2003-12-15 16:03:40.000000000 +0100
+@@ -79,7 +79,7 @@ Boston, MA 02111-1307, USA.  */
+    CC1_SPEC is used for both cc1 and cc1plus.  */
+ 
+ #undef CC1_SPEC
+-#define CC1_SPEC "%{!no-fpic:%{!fPIC:-fpic}} %{!Wmultichar: -Wno-multichar} %(cc1_cpu) %{profile:-p}"
++#define CC1_SPEC "%{!no-fpic:%{!fno-pic:%{!fno-pie:%{!fpie:%{!fPIC:%{!fPIE:-fpic}}}}}} %{!Wmultichar: -Wno-multichar} %(cc1_cpu) %{profile:-p}"
+ 
+ #undef CC1PLUS_SPEC
+ #define CC1PLUS_SPEC "%{!Wctor-dtor-privacy:-Wno-ctor-dtor-privacy}"
+--- gcc-3.3.2/gcc/config/i386/freebsd-aout.h.pie	2003-04-29 14:57:06.000000000 +0200
++++ gcc-3.3.2/gcc/config/i386/freebsd-aout.h	2003-12-15 16:03:40.000000000 +0100
+@@ -208,7 +208,7 @@ do {                                    
+       ASM_OUTPUT_MEASURED_SIZE (FILE, FNAME);				\
+   } while (0)
+ 
+-#define ASM_SPEC   " %| %{fpic:-k} %{fPIC:-k}"
++#define ASM_SPEC   " %| %{fpic|fPIC|fpie|fPIE:-k}"
+ #define LINK_SPEC \
+   "%{p:%e`-p' not supported; use `-pg' and gprof(1)} \
+    %{shared:-Bshareable} \
+--- gcc-3.3.2/gcc/config/i386/linux64.h.pie	2003-12-15 16:03:35.000000000 +0100
++++ gcc-3.3.2/gcc/config/i386/linux64.h	2003-12-15 16:03:40.000000000 +0100
+@@ -71,17 +71,6 @@ Boston, MA 02111-1307, USA.  */
+       %{!m32:%{!dynamic-linker:-dynamic-linker /lib64/ld-linux-x86-64.so.2}}} \
+     %{static:-static}}"
+ 
+-#undef  STARTFILE_SPEC
+-#define STARTFILE_SPEC \
+-  "%{!shared: \
+-     %{pg:gcrt1.o%s} %{!pg:%{p:gcrt1.o%s} \
+-     %{!p:%{profile:gcrt1.o%s} %{!profile:crt1.o%s}}}} \
+-   crti.o%s %{static:crtbeginT.o%s} \
+-   %{!static:%{!shared:crtbegin.o%s} %{shared:crtbeginS.o%s}}"
+-
+-#undef  ENDFILE_SPEC
+-#define ENDFILE_SPEC "%{!shared:crtend.o%s} %{shared:crtendS.o%s} crtn.o%s"
+-
+ #define MULTILIB_DEFAULTS { "m64" }
+ 
+ #define SUBTARGET_FILE_END(FILE) \
+--- gcc-3.3.2/gcc/config/ia64/linux.h.pie	2003-12-15 16:03:39.000000000 +0100
++++ gcc-3.3.2/gcc/config/ia64/linux.h	2003-12-15 16:03:40.000000000 +0100
+@@ -21,18 +21,27 @@ do {						\
+ 
+ /* Need to override linux.h STARTFILE_SPEC, since it has crtbeginT.o in.  */
+ #undef STARTFILE_SPEC
++#ifdef HAVE_LD_PIE
++#define STARTFILE_SPEC \
++  "%{!shared: \
++     %{pg:gcrt1.o%s} %{!pg:%{p:gcrt1.o%s} \
++		       %{!p:%{profile:gcrt1.o%s} \
++			 %{!profile:%{pie:Scrt1.o%s}%{!pie:crt1.o%s}}}}} \
++   crti.o%s %{!shared:%{!pie:crtbegin.o%s}} %{shared|pie:crtbeginS.o%s}"
++#else
+ #define STARTFILE_SPEC \
+   "%{!shared: \
+      %{pg:gcrt1.o%s} %{!pg:%{p:gcrt1.o%s} \
+ 		       %{!p:%{profile:gcrt1.o%s} \
+ 			 %{!profile:crt1.o%s}}}} \
+-   crti.o%s %{!shared:crtbegin.o%s} %{shared:crtbeginS.o%s}"
++   crti.o%s %{!shared:%{!pie:crtbegin.o%s}} %{shared|pie:crtbeginS.o%s}"
++#endif
+ 
+ /* Similar to standard Linux, but adding -ffast-math support.  */
+ #undef  ENDFILE_SPEC
+ #define ENDFILE_SPEC \
+   "%{ffast-math|funsafe-math-optimizations:crtfastmath.o%s} \
+-   %{!shared:crtend.o%s} %{shared:crtendS.o%s} crtn.o%s"
++   %{!shared:%{!pie:crtend.o%s}} %{shared|pie:crtendS.o%s} crtn.o%s"
+ 
+ /* Define this for shared library support because it isn't in the main
+    linux.h file.  */
+--- gcc-3.3.2/gcc/config/m68k/linux.h.pie	2003-12-15 16:03:36.000000000 +0100
++++ gcc-3.3.2/gcc/config/m68k/linux.h	2003-12-15 16:03:40.000000000 +0100
+@@ -119,18 +119,18 @@ Boston, MA 02111-1307, USA.  */
+ #ifdef USE_GNULIBC_1
+ #if TARGET_DEFAULT & MASK_68881
+ #define CPP_SPEC \
+-  "%{fPIC:-D__PIC__ -D__pic__} %{fpic:-D__PIC__ -D__pic__} %{!msoft-float:-D__HAVE_68881__} %{posix:-D_POSIX_SOURCE}"
++  "%{fPIC|fpic|fPIE|fpie:-D__PIC__ -D__pic__} %{!msoft-float:-D__HAVE_68881__} %{posix:-D_POSIX_SOURCE}"
+ #else
+ #define CPP_SPEC \
+-  "%{fPIC:-D__PIC__ -D__pic__} %{fpic:-D__PIC__ -D__pic__} %{m68881:-D__HAVE_68881__} %{posix:-D_POSIX_SOURCE}"
++  "%{fPIC|fpic|fPIE|fpie:-D__PIC__ -D__pic__} %{m68881:-D__HAVE_68881__} %{posix:-D_POSIX_SOURCE}"
+ #endif
+ #else
+ #if TARGET_DEFAULT & MASK_68881
+ #define CPP_SPEC \
+-  "%{fPIC:-D__PIC__ -D__pic__} %{fpic:-D__PIC__ -D__pic__} %{!msoft-float:-D__HAVE_68881__} %{posix:-D_POSIX_SOURCE} %{pthread:-D_REENTRANT}"
++  "%{fPIC|fpic|fPIE|fpie:-D__PIC__ -D__pic__} %{!msoft-float:-D__HAVE_68881__} %{posix:-D_POSIX_SOURCE} %{pthread:-D_REENTRANT}"
+ #else
+ #define CPP_SPEC \
+-  "%{fPIC:-D__PIC__ -D__pic__} %{fpic:-D__PIC__ -D__pic__} %{m68881:-D__HAVE_68881__} %{posix:-D_POSIX_SOURCE} %{pthread:-D_REENTRANT}"
++  "%{fPIC|fpic|fPIE|fpie:-D__PIC__ -D__pic__} %{m68881:-D__HAVE_68881__} %{posix:-D_POSIX_SOURCE} %{pthread:-D_REENTRANT}"
+ #endif
+ #endif
+ 
+--- gcc-3.3.2/gcc/config/m68k/netbsd.h.pie	2002-08-29 23:40:13.000000000 +0200
++++ gcc-3.3.2/gcc/config/m68k/netbsd.h	2003-12-15 16:03:40.000000000 +0100
+@@ -31,7 +31,7 @@
+   "%{!msoft-float:-D__HAVE_68881__ -D__HAVE_FPU__} %(netbsd_cpp_spec)"
+ 
+ #undef ASM_SPEC
+-#define ASM_SPEC " %| %{m68030} %{m68040} %{m68060} %{fpic:-k} %{fPIC:-k -K}"
++#define ASM_SPEC " %| %{m68030} %{m68040} %{m68060} %{fpic|fpie:-k} %{fPIC|fPIE:-k -K}"
+ 
+ 
+ /* Make gcc agree with <machine/ansi.h> */
+--- gcc-3.3.2/gcc/config/m68k/sun2.h.pie	2002-08-29 23:40:13.000000000 +0200
++++ gcc-3.3.2/gcc/config/m68k/sun2.h	2003-12-15 16:03:40.000000000 +0100
+@@ -40,7 +40,7 @@ Boston, MA 02111-1307, USA.  */
+ 
+ #define ASM_SPEC \
+  "%{m68020:-mc68020}%{mc68020:-mc68020}%{!mc68020:%{!m68020:-mc68010}} \
+-  %{fpic:-k} %{fPIC:-k} %{R} %{j} %{J} %{h} %{d2} %{keep-local-as-symbols:-L}"
++  %{fpic|fPIC|fpie|fPIE:-k} %{R} %{j} %{J} %{h} %{d2} %{keep-local-as-symbols:-L}"
+   
+ /* Names to predefine in the preprocessor for this target machine.  */
+ 
+--- gcc-3.3.2/gcc/config/m68k/openbsd.h.pie	2002-10-21 00:37:11.000000000 +0200
++++ gcc-3.3.2/gcc/config/m68k/openbsd.h	2003-12-15 16:03:40.000000000 +0100
+@@ -38,7 +38,7 @@ Boston, MA 02111-1307, USA.  */
+ 
+ /* m68k as needs to know about the processor subtype.  */
+ #undef ASM_SPEC
+-#define ASM_SPEC "%| %{m68030} %{m68040} %{m68060} %{fpic:-k} %{fPIC:-k -K}"
++#define ASM_SPEC "%| %{m68030} %{m68040} %{m68060} %{fpic|fpie:-k} %{fPIC|fPIE:-k -K}"
+ 
+ /* Layout of source language data types.  */
+ 
+--- gcc-3.3.2/gcc/config/m68k/linux-aout.h.pie	2002-08-29 23:40:13.000000000 +0200
++++ gcc-3.3.2/gcc/config/m68k/linux-aout.h	2003-12-15 16:03:40.000000000 +0100
+@@ -46,7 +46,7 @@ Boston, MA 02111-1307, USA.  */
+ 
+ #undef ASM_SPEC
+ #define ASM_SPEC \
+-  "%{m68030} %{m68040} %{fpic:-k} %{fPIC:-k}"
++  "%{m68030} %{m68040} %{fpic|fPIC|fpie|fPIE:-k}"
+ 
+ #undef LIB_SPEC
+ #if 1
+--- gcc-3.3.2/gcc/config/m68k/netbsd-elf.h.pie	2003-12-15 16:03:36.000000000 +0100
++++ gcc-3.3.2/gcc/config/m68k/netbsd-elf.h	2003-12-15 16:03:40.000000000 +0100
+@@ -105,7 +105,7 @@ Boston, MA 02111-1307, USA.  */
+ #define ASM_SPEC \
+   " %| %(asm_default_spec) \
+     %{m68010} %{m68020} %{m68030} %{m68040} %{m68060} \
+-    %{fpic:-k} %{fPIC:-k -K}"
++    %{fpic|fpie:-k} %{fPIC|fPIE:-k -K}"
+ 
+ /* Provide a LINK_SPEC appropriate for a NetBSD/m68k ELF target.  */
+ 
+--- gcc-3.3.2/gcc/config/m68k/sun3.h.pie	2002-10-16 02:40:33.000000000 +0200
++++ gcc-3.3.2/gcc/config/m68k/sun3.h	2003-12-15 16:03:40.000000000 +0100
+@@ -80,7 +80,7 @@ Boston, MA 02111-1307, USA.  */
+ 
+ #define ASM_SPEC \
+  "%{m68000:-mc68010}%{mc68000:-mc68010}%{!mc68000:%{!m68000:-mc68020}} \
+-  %{fpic:-k} %{fPIC:-k} %{R} %{j} %{J} %{h} %{d2} %{keep-local-as-symbols:-L}"
++  %{fpic|fPIC|fpie|fPIE:-k} %{R} %{j} %{J} %{h} %{d2} %{keep-local-as-symbols:-L}"
+ 
+ /* Names to predefine in the preprocessor for this target machine.  */
+ /* For a while,  -D_CROSS_TARGET_ARCH=SUN3 was included here,
+--- gcc-3.3.2/gcc/config/mips/linux.h.pie	2003-05-08 19:31:34.000000000 +0200
++++ gcc-3.3.2/gcc/config/mips/linux.h	2003-12-15 16:03:40.000000000 +0100
+@@ -164,7 +164,7 @@ void FN ()							\
+ #undef  SUBTARGET_CPP_SPEC
+ #define SUBTARGET_CPP_SPEC "\
+ %{fno-PIC:-U__PIC__ -U__pic__} %{fno-pic:-U__PIC__ -U__pic__} \
+-%{fPIC:-D__PIC__ -D__pic__} %{fpic:-D__PIC__ -D__pic__} \
++%{fPIC|fPIE|fpic|fpie:-D__PIC__ -D__pic__} \
+ %{pthread:-D_REENTRANT}"
+ 
+ /* From iris5.h */
+--- gcc-3.3.2/gcc/config/mips/openbsd.h.pie	2002-06-11 09:26:38.000000000 +0200
++++ gcc-3.3.2/gcc/config/mips/openbsd.h	2003-12-15 16:03:40.000000000 +0100
+@@ -21,7 +21,7 @@ Boston, MA 02111-1307, USA.  */
+ /* Definitions needed for OpenBSD, to avoid picking mips 'defaults'.  */
+ 
+ /* GAS must know this.  */
+-#define SUBTARGET_ASM_SPEC "%{fPIC:-KPIC} %|"
++#define SUBTARGET_ASM_SPEC "%{fPIC|fPIE:-KPIC} %|"
+ 
+ /* CPP specific OpenBSD specs.  */
+ #define SUBTARGET_CPP_SPEC OBSD_CPP_SPEC
+--- gcc-3.3.2/gcc/config/pa/pa-linux.h.pie	2002-12-10 11:55:31.000000000 +0100
++++ gcc-3.3.2/gcc/config/pa/pa-linux.h	2003-12-15 16:03:40.000000000 +0100
+@@ -67,7 +67,7 @@ Boston, MA 02111-1307, USA.  */
+   while (0)
+ 
+ #undef CPP_SPEC
+-#define CPP_SPEC "%{fPIC:-D__PIC__ -D__pic__} %{fpic:-D__PIC__ -D__pic__} %{posix:-D_POSIX_SOURCE}"
++#define CPP_SPEC "%{fPIC|fpic|fPIE|fpie:-D__PIC__ -D__pic__} %{posix:-D_POSIX_SOURCE}"
+ 
+ #undef	LIB_SPEC
+ #define LIB_SPEC \
+--- gcc-3.3.2/gcc/config/rs6000/sysv4.h.pie	2003-12-15 16:03:36.000000000 +0100
++++ gcc-3.3.2/gcc/config/rs6000/sysv4.h	2003-12-15 16:03:40.000000000 +0100
+@@ -816,7 +816,7 @@ do {						\
+ #define	ASM_SPEC "%(asm_cpu) \
+ %{.s: %{mregnames} %{mno-regnames}} %{.S: %{mregnames} %{mno-regnames}} \
+ %{v:-V} %{Qy:} %{!Qn:-Qy} %{n} %{T} %{Ym,*} %{Yd,*} %{Wa,*:%*} \
+-%{mrelocatable} %{mrelocatable-lib} %{fpic:-K PIC} %{fPIC:-K PIC} \
++%{mrelocatable} %{mrelocatable-lib} %{fpic|fPIC|fpie|fPIE:-K PIC} \
+ %{memb} %{!memb: %{msdata: -memb} %{msdata=eabi: -memb}} \
+ %{mlittle} %{mlittle-endian} %{mbig} %{mbig-endian} \
+ %{!mlittle: %{!mlittle-endian: %{!mbig: %{!mbig-endian: \
+@@ -1132,14 +1132,22 @@ do {						\
+ %{mnewlib: ecrti.o%s} %{!mnewlib: crti.o%s} \
+ %{!shared:crtbegin.o%s} %{shared:crtbeginS.o%s}"
+ #else
++#if defined HAVE_LD_PIE
++#define	STARTFILE_LINUX_SPEC "\
++%{!shared: %{pg:gcrt1.o%s} %{!pg:%{p:gcrt1.o%s} %{!p:%{pie:Scrt1.o%s}%{!pie:crt1.o%s}}}} \
++%{mnewlib: ecrti.o%s} %{!mnewlib: crti.o%s} \
++%{static:crtbeginT.o%s} \
++%{!static:%{!shared:%{!pie:crtbegin.o%s}} %{shared|pie:crtbeginS.o%s}}"
++#else
+ #define	STARTFILE_LINUX_SPEC "\
+ %{!shared: %{pg:gcrt1.o%s} %{!pg:%{p:gcrt1.o%s} %{!p:crt1.o%s}}} \
+ %{mnewlib: ecrti.o%s} %{!mnewlib: crti.o%s} \
+ %{static:crtbeginT.o%s} \
+-%{!static:%{!shared:crtbegin.o%s} %{shared:crtbeginS.o%s}}"
++%{!static:%{!shared:%{!pie:crtbegin.o%s}} %{shared|pie:crtbeginS.o%s}}"
++#endif
+ #endif
+ 
+-#define	ENDFILE_LINUX_SPEC "%{!shared:crtend.o%s} %{shared:crtendS.o%s} \
++#define	ENDFILE_LINUX_SPEC "%{!shared:%{!pie:crtend.o%s}} %{shared|pie:crtendS.o%s} \
+ %{mnewlib: ecrtn.o%s} %{!mnewlib: crtn.o%s}"
+ 
+ #define LINK_START_LINUX_SPEC ""
+--- gcc-3.3.2/gcc/config/sparc/hal.h.pie	1999-09-04 17:09:00.000000000 +0200
++++ gcc-3.3.2/gcc/config/sparc/hal.h	2003-12-15 16:03:40.000000000 +0100
+@@ -25,7 +25,7 @@ Boston, MA 02111-1307, USA.  */
+ #undef ASM_SPEC
+ #define ASM_SPEC \
+   "%{V} %{v:%{!V:-V}} %{Qy:} %{!Qn:-Qy} %{n} %{T} %{Ym,*} %{Wa,*:%*} -e1 \
+-   %{fpic:-K PIC} %{fPIC:-K PIC}"
++   %{fpic|fpie|fPIC|fPIE:-K PIC}"
+ 
+ /* Need DWARF for debuggers.  */
+ 
+--- gcc-3.3.2/gcc/config/sparc/linux-aout.h.pie	2002-11-26 05:54:49.000000000 +0100
++++ gcc-3.3.2/gcc/config/sparc/linux-aout.h	2003-12-15 16:03:40.000000000 +0100
+@@ -64,7 +64,7 @@ Boston, MA 02111-1307, USA.  */
+ 
+ #undef CPP_SUBTARGET_SPEC
+ #define CPP_SUBTARGET_SPEC \
+-"%{fPIC:-D__PIC__ -D__pic__} %{fpic:-D__PIC__ -D__pic__} %{posix:-D_POSIX_SOURCE}"
++"%{fPIC|fPIE|fpic|fpie:-D__PIC__ -D__pic__} %{posix:-D_POSIX_SOURCE}"
+ 
+ /* Don't default to pcc-struct-return, because gcc is the only compiler,
+    and we want to retain compatibility with older gcc versions.  */
+@@ -92,5 +92,5 @@ Boston, MA 02111-1307, USA.  */
+    It's safe to pass -s always, even if -g is not used.  */
+ #undef ASM_SPEC
+ #define ASM_SPEC \
+-  "%{V} %{v:%{!V:-V}} %{n} %{T} %{Ym,*} %{Wa,*:%*} -s %{fpic:-K PIC} %{fPIC:-K PIC}"
++  "%{V} %{v:%{!V:-V}} %{n} %{T} %{Ym,*} %{Wa,*:%*} -s %{fpic|fpie|fPIC|fPIE:-K PIC}"
+ 
+--- gcc-3.3.2/gcc/config/sparc/linux.h.pie	2003-12-15 16:03:37.000000000 +0100
++++ gcc-3.3.2/gcc/config/sparc/linux.h	2003-12-15 16:03:40.000000000 +0100
+@@ -47,11 +47,19 @@ Boston, MA 02111-1307, USA.  */
+      %{pg:gcrt1.o%s} %{!pg:%{p:gcrt1.o%s} %{!p:crt1.o%s}}}\
+    crti.o%s %{!shared:crtbegin.o%s} %{shared:crtbeginS.o%s}"
+ #else
++#if defined HAVE_LD_PIE
++#define STARTFILE_SPEC \
++  "%{!shared: \
++     %{pg:gcrt1.o%s} %{!pg:%{p:gcrt1.o%s} %{!p:%{pie:Scrt1.o%s}%{!pie:crt1.o%s}}}}\
++   crti.o%s %{static:crtbeginT.o%s}\
++   %{!static:%{!shared:%{!pie:crtbegin.o%s}} %{shared|pie:crtbeginS.o%s}}"
++#else
+ #define STARTFILE_SPEC \
+   "%{!shared: \
+      %{pg:gcrt1.o%s} %{!pg:%{p:gcrt1.o%s} %{!p:crt1.o%s}}}\
+    crti.o%s %{static:crtbeginT.o%s}\
+-   %{!static:%{!shared:crtbegin.o%s} %{shared:crtbeginS.o%s}}"
++   %{!static:%{!shared:%{!pie:crtbegin.o%s}} %{shared|pie:crtbeginS.o%s}}"
++#endif
+ #endif
+ 
+ /* Provide a ENDFILE_SPEC appropriate for GNU/Linux.  Here we tack on
+@@ -63,7 +71,7 @@ Boston, MA 02111-1307, USA.  */
+ #undef  ENDFILE_SPEC
+ #define ENDFILE_SPEC \
+   "%{ffast-math|funsafe-math-optimizations:crtfastmath.o%s} \
+-   %{!shared:crtend.o%s} %{shared:crtendS.o%s} crtn.o%s"
++   %{!shared:%{!pie:crtend.o%s}} %{shared|pie:crtendS.o%s} crtn.o%s"
+ 
+ /* This is for -profile to use -lc_p instead of -lc.  */
+ #undef	CC1_SPEC
+@@ -104,11 +112,11 @@ Boston, MA 02111-1307, USA.  */
+ #undef CPP_SUBTARGET_SPEC
+ #ifdef USE_GNULIBC_1
+ #define CPP_SUBTARGET_SPEC \
+-"%{fPIC:-D__PIC__ -D__pic__} %{fpic:-D__PIC__ -D__pic__} %{posix:-D_POSIX_SOURCE} \
++"%{fPIC|fPIE|fpic|fpie:-D__PIC__ -D__pic__} %{posix:-D_POSIX_SOURCE} \
+ %{mlong-double-128:-D__LONG_DOUBLE_128__}"
+ #else
+ #define CPP_SUBTARGET_SPEC \
+-"%{fPIC:-D__PIC__ -D__pic__} %{fpic:-D__PIC__ -D__pic__} %{posix:-D_POSIX_SOURCE} \
++"%{fPIC|fPIE|fpic|fpie:-D__PIC__ -D__pic__} %{posix:-D_POSIX_SOURCE} \
+ %{pthread:-D_REENTRANT} %{mlong-double-128:-D__LONG_DOUBLE_128__}"
+ #endif
+ 
+@@ -184,8 +192,8 @@ Boston, MA 02111-1307, USA.  */
+    It's safe to pass -s always, even if -g is not used.  */
+ #undef ASM_SPEC
+ #define ASM_SPEC \
+-  "%{V} %{v:%{!V:-V}} %{!Qn:-Qy} %{n} %{T} %{Ym,*} %{Wa,*:%*} -s %{fpic:-K PIC} \
+-   %{fPIC:-K PIC} %(asm_cpu) %(asm_relax)"
++  "%{V} %{v:%{!V:-V}} %{!Qn:-Qy} %{n} %{T} %{Ym,*} %{Wa,*:%*} -s \
++   %{fpic|fPIC|fpie|fPIE:-K PIC} %(asm_cpu) %(asm_relax)"
+ 
+ /* Same as sparc.h */
+ #undef DBX_REGISTER_NUMBER
+--- gcc-3.3.2/gcc/config/sparc/linux64.h.pie	2003-12-15 16:03:37.000000000 +0100
++++ gcc-3.3.2/gcc/config/sparc/linux64.h	2003-12-15 16:03:40.000000000 +0100
+@@ -55,10 +55,17 @@ Boston, MA 02111-1307, USA.  */
+    
+ #undef  STARTFILE_SPEC
+ 
++#ifdef HAVE_LD_PIE
++#define STARTFILE_SPEC \
++  "%{!shared:%{pg:gcrt1.o%s} %{!pg:%{p:gcrt1.o%s} %{!p:%{pie:Scrt1.o%s}%{!pie:crt1.o%s}}}}\
++   crti.o%s %{static:crtbeginT.o%s}\
++   %{!static:%{!shared:%{!pie:crtbegin.o%s}} %{shared|pie:crtbeginS.o%s}}"
++#else
+ #define STARTFILE_SPEC \
+   "%{!shared:%{pg:gcrt1.o%s} %{!pg:%{p:gcrt1.o%s} %{!p:crt1.o%s}}}\
+    crti.o%s %{static:crtbeginT.o%s}\
+-   %{!static:%{!shared:crtbegin.o%s} %{shared:crtbeginS.o%s}}"
++   %{!static:%{!shared:%{!pie:crtbegin.o%s}} %{shared|pie:crtbeginS.o%s}}"
++#endif
+ 
+ /* Provide a ENDFILE_SPEC appropriate for GNU/Linux.  Here we tack on
+    the GNU/Linux magical crtend.o file (see crtstuff.c) which
+@@ -69,7 +76,7 @@ Boston, MA 02111-1307, USA.  */
+ #undef  ENDFILE_SPEC
+ 
+ #define ENDFILE_SPEC \
+-  "%{!shared:crtend.o%s} %{shared:crtendS.o%s} crtn.o%s\
++  "%{!shared:%{!pie:crtend.o%s}} %{shared|pie:crtendS.o%s} crtn.o%s\
+    %{ffast-math|funsafe-math-optimizations:crtfastmath.o%s}"
+ 
+ /* The GNU C++ standard library requires that these macros be defined.  */
+@@ -116,8 +123,7 @@ Boston, MA 02111-1307, USA.  */
+ 
+ #undef CPP_SUBTARGET_SPEC
+ #define CPP_SUBTARGET_SPEC "\
+-%{fPIC:-D__PIC__ -D__pic__} \
+-%{fpic:-D__PIC__ -D__pic__} \
++%{fPIC|fpic|fPIE|fpie:-D__PIC__ -D__pic__} \
+ %{posix:-D_POSIX_SOURCE} \
+ %{pthread:-D_REENTRANT} \
+ "
+@@ -246,7 +252,7 @@ Boston, MA 02111-1307, USA.  */
+ %{T} \
+ %{Ym,*} \
+ %{Wa,*:%*} \
+--s %{fpic:-K PIC} %{fPIC:-K PIC} \
++-s %{fpic|fPIC|fpie|fPIE:-K PIC} \
+ %{mlittle-endian:-EL} \
+ %(asm_cpu) %(asm_arch) %(asm_relax)"
+ 
+--- gcc-3.3.2/gcc/config/sparc/netbsd-elf.h.pie	2002-10-19 01:10:35.000000000 +0200
++++ gcc-3.3.2/gcc/config/sparc/netbsd-elf.h	2003-12-15 16:03:40.000000000 +0100
+@@ -96,7 +96,7 @@ Boston, MA 02111-1307, USA.  */
+ #define USER_LABEL_PREFIX ""
+ 
+ #undef ASM_SPEC
+-#define ASM_SPEC "%{fpic:-K PIC} %{fPIC:-K PIC} %{V} %{v:%{!V:-V}} \
++#define ASM_SPEC "%{fpic|fPIC|fpie|fPIE:-K PIC} %{V} %{v:%{!V:-V}} \
+ %{mlittle-endian:-EL} \
+ %(asm_cpu) %(asm_arch) %(asm_relax)"
+ 
+--- gcc-3.3.2/gcc/config/sparc/openbsd64.h.pie	2002-05-30 22:35:58.000000000 +0200
++++ gcc-3.3.2/gcc/config/sparc/openbsd64.h	2003-12-15 16:03:40.000000000 +0100
+@@ -42,7 +42,7 @@ Boston, MA 02111-1307, USA.  */
+ 
+ #undef ASM_SPEC
+ #define ASM_SPEC "\
+-%{v:-V} -s %{fpic:-K PIC} %{fPIC:-K PIC} \
++%{v:-V} -s %{fpic|fPIC|fpie|fPIE:-K PIC} \
+ %{mlittle-endian:-EL} \
+ %(asm_cpu) %(asm_arch) \
+ "
+--- gcc-3.3.2/gcc/config/sparc/sp64-elf.h.pie	2002-08-29 23:40:18.000000000 +0200
++++ gcc-3.3.2/gcc/config/sparc/sp64-elf.h	2003-12-15 16:03:40.000000000 +0100
+@@ -50,7 +50,7 @@ Boston, MA 02111-1307, USA.  */
+ 
+ #undef ASM_SPEC
+ #define ASM_SPEC "\
+-%{v:-V} -s %{fpic:-K PIC} %{fPIC:-K PIC} \
++%{v:-V} -s %{fpic|fPIC|fpie|fPIE:-K PIC} \
+ %{mlittle-endian:-EL} \
+ %(asm_cpu) %(asm_arch) \
+ "
+--- gcc-3.3.2/gcc/config/sparc/sparc.h.pie	2003-12-15 16:03:37.000000000 +0100
++++ gcc-3.3.2/gcc/config/sparc/sparc.h	2003-12-15 16:03:40.000000000 +0100
+@@ -323,7 +323,7 @@ extern enum cmodel sparc_cmodel;
+ /* Special flags to the Sun-4 assembler when using pipe for input.  */
+ 
+ #define ASM_SPEC "\
+-%| %{R} %{!pg:%{!p:%{fpic:-k} %{fPIC:-k}}} %{keep-local-as-symbols:-L} \
++%| %{R} %{!pg:%{!p:%{fpic|fPIC|fpie|fPIE:-k}}} %{keep-local-as-symbols:-L} \
+ %(asm_cpu) %(asm_relax)"
+ 
+ /* This macro defines names of additional specifications to put in the specs
+--- gcc-3.3.2/gcc/config/sparc/sysv4.h.pie	2002-09-15 14:03:42.000000000 +0200
++++ gcc-3.3.2/gcc/config/sparc/sysv4.h	2003-12-15 16:03:40.000000000 +0100
+@@ -66,7 +66,7 @@ Boston, MA 02111-1307, USA.  */
+ #undef ASM_SPEC
+ #define ASM_SPEC \
+   "%{v:-V} %{Qy:} %{!Qn:-Qy} %{n} %{T} %{Ym,*} %{Yd,*} %{Wa,*:%*} \
+-   %{fpic:-K PIC} %{fPIC:-K PIC} %(asm_cpu)"
++   %{fpic|fPIC|fpie|fPIE:-K PIC} %(asm_cpu)"
+ 
+ /* Define the names of various pseudo-op used by the SPARC/svr4 assembler.
+    Note that many of these are different from the typical pseudo-ops used
+--- gcc-3.3.2/gcc/config/sparc/vxsim.h.pie	2002-09-15 14:03:42.000000000 +0200
++++ gcc-3.3.2/gcc/config/sparc/vxsim.h	2003-12-15 16:03:40.000000000 +0100
+@@ -40,7 +40,7 @@ Boston, MA 02111-1307, USA.  */
+ #undef ASM_SPEC
+ #define ASM_SPEC \
+   "%{V} %{v:%{!V:-V}} %{Qy:} %{!Qn:-Qy} %{n} %{T} %{Ym,*} %{Wa,*:%*} -s \
+-   %{fpic:-K PIC} %{fPIC:-K PIC}"
++   %{fpic|fpie|fPIC|fPIE:-K PIC}"
+ 
+ /* However it appears that Solaris 2.0 uses the same reg numbering as
+    the old BSD-style system did.  */
+--- gcc-3.3.2/gcc/config/sol2.h.pie	2002-06-20 13:03:37.000000000 +0200
++++ gcc-3.3.2/gcc/config/sol2.h	2003-12-15 16:03:40.000000000 +0100
+@@ -79,7 +79,7 @@ Boston, MA 02111-1307, USA.  */
+ #undef ASM_SPEC
+ #define ASM_SPEC "\
+ %{v:-V} %{Qy:} %{!Qn:-Qy} %{n} %{T} %{Ym,*} %{Wa,*:%*} -s \
+-%{fpic:-K PIC} %{fPIC:-K PIC} \
++%{fpic|fpie|fPIC|fPIE:-K PIC} \
+ %(asm_cpu) \
+ "
+ 
+--- gcc-3.3.2/gcc/config/openbsd.h.pie	2002-11-26 05:54:46.000000000 +0100
++++ gcc-3.3.2/gcc/config/openbsd.h	2003-12-15 16:03:40.000000000 +0100
+@@ -106,7 +106,7 @@ Boston, MA 02111-1307, USA.  */
+    still uses a special flavor of gas that needs to be told when generating 
+    pic code.  */
+ #undef ASM_SPEC
+-#define ASM_SPEC "%{fpic:-k} %{fPIC:-k -K} %|"
++#define ASM_SPEC "%{fpic|fpie:-k} %{fPIC|fPIE:-k -K} %|"
+ 
+ #else
+ /* Since we use gas, stdin -> - is a good idea, but we don't want to
+--- gcc-3.3.2/gcc/config/linux.h.pie	2003-09-16 17:39:22.000000000 +0200
++++ gcc-3.3.2/gcc/config/linux.h	2003-12-15 16:03:40.000000000 +0100
+@@ -54,13 +54,23 @@ Boston, MA 02111-1307, USA.  */
+ 			 %{!profile:crt1.o%s}}}} \
+    crti.o%s %{!shared:crtbegin.o%s} %{shared:crtbeginS.o%s}"
+ #else
++#if defined HAVE_LD_PIE
++#define STARTFILE_SPEC \
++  "%{!shared: \
++     %{pg:gcrt1.o%s} %{!pg:%{p:gcrt1.o%s} \
++		       %{!p:%{profile:gcrt1.o%s} \
++			 %{!profile:%{pie:Scrt1.o%s}%{!pie:crt1.o%s}}}}} \
++   crti.o%s %{static:crtbeginT.o%s}\
++   %{!static:%{!shared:%{!pie:crtbegin.o%s}} %{shared|pie:crtbeginS.o%s}}"
++#else
+ #define STARTFILE_SPEC \
+   "%{!shared: \
+      %{pg:gcrt1.o%s} %{!pg:%{p:gcrt1.o%s} \
+ 		       %{!p:%{profile:gcrt1.o%s} \
+ 			 %{!profile:crt1.o%s}}}} \
+    crti.o%s %{static:crtbeginT.o%s}\
+-   %{!static:%{!shared:crtbegin.o%s} %{shared:crtbeginS.o%s}}"
++   %{!static:%{!shared:%{!pie:crtbegin.o%s}} %{shared|pie:crtbeginS.o%s}}"
++#endif
+ #endif
+ 
+ /* Provide a ENDFILE_SPEC appropriate for GNU/Linux.  Here we tack on
+@@ -71,7 +81,7 @@ Boston, MA 02111-1307, USA.  */
+ 
+ #undef	ENDFILE_SPEC
+ #define ENDFILE_SPEC \
+-  "%{!shared:crtend.o%s} %{shared:crtendS.o%s} crtn.o%s"
++  "%{!shared:%{!pie:crtend.o%s}} %{shared|pie:crtendS.o%s} crtn.o%s"
+ 
+ /* This is for -profile to use -lc_p instead of -lc.  */
+ #ifndef CC1_SPEC
+--- gcc-3.3.2/gcc/config/freebsd-spec.h.pie	2003-03-12 03:38:01.000000000 +0100
++++ gcc-3.3.2/gcc/config/freebsd-spec.h	2003-12-15 16:03:40.000000000 +0100
+@@ -79,7 +79,7 @@ Boston, MA 02111-1307, USA.  */
+ 
+ #define FBSD_CPP_SPEC "							\
+   %(cpp_cpu)								\
+-  %{fPIC:-D__PIC__ -D__pic__} %{fpic:-D__PIC__ -D__pic__}		\
++  %{fPIC|fpic|fPIE|fpie:-D__PIC__ -D__pic__}				\
+   %{posix:-D_POSIX_SOURCE}"
+ 
+ /* Provide a STARTFILE_SPEC appropriate for FreeBSD.  Here we add
+--- gcc-3.3.2/gcc/config/netbsd-aout.h.pie	2002-09-29 15:16:44.000000000 +0200
++++ gcc-3.3.2/gcc/config/netbsd-aout.h	2003-12-15 16:03:40.000000000 +0100
+@@ -39,7 +39,7 @@ Boston, MA 02111-1307, USA.  */
+    with the options for generating PIC code.  */
+ 
+ #undef ASM_SPEC
+-#define ASM_SPEC " %| %{fpic:-k} %{fPIC:-k -K}"
++#define ASM_SPEC " %| %{fpic|fpie:-k} %{fPIC|fPIE:-k -K}"
+ 
+ 
+ /* Provide a STARTFILE_SPEC appropriate for NetBSD a.out.  Here we
+--- gcc-3.3.2/gcc/doc/invoke.texi.pie	2003-12-15 16:03:38.000000000 +0100
++++ gcc-3.3.2/gcc/doc/invoke.texi	2003-12-15 16:03:40.000000000 +0100
+@@ -304,7 +304,7 @@ in the following sections.
+ @item Linker Options
+ @xref{Link Options,,Options for Linking}.
+ @gccoptlist{@var{object-file-name}  -l@var{library} @gol
+--nostartfiles  -nodefaultlibs  -nostdlib @gol
++-nostartfiles  -nodefaultlibs  -nostdlib -pie @gol
+ -s  -static  -static-libgcc  -shared  -shared-libgcc  -symbolic @gol
+ -Wl,@var{option}  -Xlinker @var{option} @gol
+ -u @var{symbol}}
+@@ -656,7 +656,7 @@ in the following sections.
+ -fasynchronous-unwind-tables @gol
+ -finhibit-size-directive  -finstrument-functions @gol
+ -fno-common  -fno-ident  -fno-gnu-linker @gol
+--fpcc-struct-return  -fpic  -fPIC @gol
++-fpcc-struct-return  -fpic  -fPIC -fpie -fPIE @gol
+ -freg-struct-return  -fshared-data  -fshort-enums @gol
+ -fshort-double  -fshort-wchar  -fvolatile @gol
+ -fvolatile-global  -fvolatile-static @gol
+@@ -4669,6 +4669,13 @@ library subroutines.  (For example, @sam
+ constructors will be called; @pxref{Collect2,,@code{collect2}, gccint,
+ GNU Compiler Collection (GCC) Internals}.)
+ 
++@item -pie
++@opindex pie
++Produce a position independent executable on targets which support it.
++For predictable results, you must also specify the same set of options
++that were used to generate code (@option{-fpie}, @option{-fPIE},
++or model suboptions) when you specify this option.
++
+ @item -s
+ @opindex s
+ Remove all symbol table and relocation information from the executable.
+@@ -10831,6 +10838,15 @@ and the SPARC.
+ Position-independent code requires special support, and therefore works
+ only on certain machines.
+ 
++@item -fpie
++@itemx -fPIE
++@opindex fpie
++@opindex fPIE
++These options are similar to @option{-fpic} and @option{-fPIC}, but
++generated position independent code can be only linked into executables.
++Usually these options are used when @option{-pie} GCC option will be
++used during linking.
++
+ @item -ffixed-@var{reg}
+ @opindex ffixed
+ Treat the register named @var{reg} as a fixed register; generated code
+--- gcc-3.3.2/gcc/toplev.c.pie	2003-12-15 16:03:39.000000000 +0100
++++ gcc-3.3.2/gcc/toplev.c	2003-12-15 16:03:40.000000000 +0100
+@@ -759,6 +759,17 @@ int flag_delayed_branch;
+ 
+ int flag_pic;
+ 
++/* Nonzero if we are compiling position independent code for executable.
++   The value is 1 if we are doing "small" pic; value is 2 if we're doing
++   "large" pic.  */
++
++int flag_pie;
++
++/* Nonzero if we are compiling code for a shared library, zero for
++   executable.  */
++
++int flag_shlib;
++
+ /* Set to the default thread-local storage (tls) model to use.  */
+ 
+ enum tls_model flag_tls_default = TLS_MODEL_GLOBAL_DYNAMIC;
+@@ -1156,6 +1167,9 @@ static const lang_independent_options f_
+   {"pic", &flag_pic, 1,
+    N_("Generate position independent code, if possible") },
+   {"PIC", &flag_pic, 2, ""},
++  {"pie", &flag_pie, 1,
++   N_("Generate position independent code for executables, if possible") },
++  {"PIE", &flag_pie, 2, ""},
+   {"exceptions", &flag_exceptions, 1,
+    N_("Enable exception handling") },
+   {"unwind-tables", &flag_unwind_tables, 1,
+@@ -5281,6 +5295,11 @@ parse_options_and_default_flags (argc, a
+ 	}
+     }
+ 
++  if (flag_pie)
++    flag_pic = flag_pie;
++  if (flag_pic && !flag_pie)
++    flag_shlib = 1;
++
+   if (flag_no_inline == 2)
+     flag_no_inline = 0;
+   else
+--- gcc-3.3.2/gcc/flags.h.pie	2003-12-15 16:03:38.000000000 +0100
++++ gcc-3.3.2/gcc/flags.h	2003-12-15 16:03:40.000000000 +0100
+@@ -484,6 +484,16 @@ extern int flag_pedantic_errors;
+ 
+ extern int flag_pic;
+ 
++/* Nonzero if we are compiling position independent code for executable.
++   1 vs 2 for a target-dependent "small" or "large" mode.  */
++      
++extern int flag_pie;
++      
++/* Nonzero if we are compiling code for a shared library, zero for
++   executable.  */
++
++extern int flag_shlib;
++
+ /* Nonzero means generate extra code for exception handling and enable
+    exception handling.  */
+ 
+--- gcc-3.3.2/gcc/gcc.c.pie	2003-08-11 01:11:26.000000000 +0200
++++ gcc-3.3.2/gcc/gcc.c	2003-12-15 16:03:40.000000000 +0100
+@@ -622,6 +622,14 @@ proper position among the other output f
+ #define LINK_GCC_C_SEQUENCE_SPEC "%G %L %G"
+ #endif
+ 
++#ifndef LINK_PIE_SPEC
++#ifdef HAVE_LD_PIE
++#define LINK_PIE_SPEC "%{pie:-pie} "
++#else
++#define LINK_PIE_SPEC "%{pie:} "
++#endif
++#endif
++
+ /* -u* was put back because both BSD and SysV seem to support it.  */
+ /* %{static:} simply prevents an error message if the target machine
+    doesn't handle -static.  */
+@@ -631,8 +639,8 @@ proper position among the other output f
+ #ifndef LINK_COMMAND_SPEC
+ #define LINK_COMMAND_SPEC "\
+ %{!fsyntax-only:%{!c:%{!M:%{!MM:%{!E:%{!S:\
+-    %(linker) %l %X %{o*} %{A} %{d} %{e*} %{m} %{N} %{n} %{r} %{s} %{t}\
+-    %{u*} %{x} %{z} %{Z} %{!A:%{!nostdlib:%{!nostartfiles:%S}}}\
++    %(linker) %l " LINK_PIE_SPEC "%X %{o*} %{A} %{d} %{e*} %{m} %{N} %{n} %{r}\
++    %{s} %{t} %{u*} %{x} %{z} %{Z} %{!A:%{!nostdlib:%{!nostartfiles:%S}}}\
+     %{static:} %{L*} %(link_libgcc) %o %{!nostdlib:%{!nodefaultlibs:%(link_gcc_c_sequence)}}\
+     %{!A:%{!nostdlib:%{!nostartfiles:%E}}} %{T*} }}}}}}"
+ #endif
+@@ -957,6 +965,7 @@ static const struct option_map option_ma
+    {"--param", "--param", "a"},
+    {"--pedantic", "-pedantic", 0},
+    {"--pedantic-errors", "-pedantic-errors", 0},
++   {"--pie", "-pie", 0},
+    {"--pipe", "-pipe", 0},
+    {"--prefix", "-B", "a"},
+    {"--preprocess", "-E", 0},
+--- gcc-3.3.2/gcc/varasm.c.pie	2003-12-15 16:03:39.000000000 +0100
++++ gcc-3.3.2/gcc/varasm.c	2003-12-15 16:03:40.000000000 +0100
+@@ -5485,7 +5485,7 @@ bool
+ default_binds_local_p (exp)
+      tree exp;
+ {
+-  return default_binds_local_p_1 (exp, flag_pic);
++  return default_binds_local_p_1 (exp, flag_shlib);
+ }
+ 
+ bool
+--- gcc-3.3.2/gcc/config.in.pie	2003-10-16 22:10:47.000000000 +0200
++++ gcc-3.3.2/gcc/config.in	2003-12-15 16:03:40.000000000 +0100
+@@ -614,6 +614,9 @@
+ /* Define if your linker supports --eh-frame-hdr option. */
+ #undef HAVE_LD_EH_FRAME_HDR
+ 
++/* Define if your linker supports -pie option. */
++#undef HAVE_LD_PIE
++
+ /* Define if your MIPS libgloss linker scripts consistently include STARTUP directives. */
+ #undef HAVE_MIPS_LIBGLOSS_STARTUP_DIRECTIVES
+ 
+--- gcc-3.3.2/gcc/configure.pie	2003-12-15 16:03:39.000000000 +0100
++++ gcc-3.3.2/gcc/configure	2003-12-15 16:03:40.000000000 +0100
+@@ -8041,6 +8041,27 @@ EOF
+ fi
+ echo "$ac_t""$gcc_cv_ld_eh_frame_hdr" 1>&6
+ 
++echo $ac_n "checking linker position independent executable support""... $ac_c" 1>&6
++echo "configure:8843: checking linker position independent executable support" >&5
++gcc_cv_ld_pie=no
++if test x$gcc_cv_gld_major_version != x -a x$gcc_cv_gld_minor_version != x; then
++  if test "$gcc_cv_gld_major_version" -eq 2 -a "$gcc_cv_gld_minor_version" -ge 15 -o "$gcc_cv_gld_major_version" -gt 2 && grep 'EMUL = elf' ../ld/Makefile > /dev/null; then
++    gcc_cv_ld_pie=yes
++  fi
++elif test x$gcc_cv_ld != x; then
++	# Check if linker supports -pie option
++	if $gcc_cv_ld --help 2>/dev/null | grep -- -pie > /dev/null; then
++		gcc_cv_ld_pie=yes
++	fi
++fi
++if test x"$gcc_cv_ld_pie" = xyes; then
++	cat >> confdefs.h <<\EOF
++#define HAVE_LD_PIE 1
++EOF
++
++fi
++echo "$ac_t""$gcc_cv_ld_pie" 1>&6
++
+ # Miscellaneous target-specific checks.
+ case "$target" in
+   mips*-*-*)
+--- gcc-3.3.2/gcc/configure.in.pie	2003-12-15 16:03:39.000000000 +0100
++++ gcc-3.3.2/gcc/configure.in	2003-12-15 16:03:40.000000000 +0100
+@@ -2393,6 +2393,24 @@ if test x"$gcc_cv_ld_eh_frame_hdr" = xye
+ fi
+ AC_MSG_RESULT($gcc_cv_ld_eh_frame_hdr)
+ 
++AC_MSG_CHECKING(linker position independent executable support)
++gcc_cv_ld_pie=no
++if test x$gcc_cv_gld_major_version != x -a x$gcc_cv_gld_minor_version != x; then
++  if test "$gcc_cv_gld_major_version" -eq 2 -a "$gcc_cv_gld_minor_version" -ge 15 -o "$gcc_cv_gld_major_version" -gt 2 && grep 'EMUL = elf' ../ld/Makefile > /dev/null; then
++    gcc_cv_ld_pie=yes
++  fi
++elif test x$gcc_cv_ld != x; then
++	# Check if linker supports -pie option
++	if $gcc_cv_ld --help 2>/dev/null | grep -- -pie > /dev/null; then
++		gcc_cv_ld_pie=yes
++	fi
++fi
++if test x"$gcc_cv_ld_pie" = xyes; then
++	AC_DEFINE(HAVE_LD_PIE, 1,
++[Define if your linker supports -pie option.])
++fi
++AC_MSG_RESULT($gcc_cv_ld_pie)
++
+ # Miscellaneous target-specific checks.
+ case "$target" in
+   mips*-*-*)

@@ -1,0 +1,59 @@
+--- gcc-3.3.1/gcc/p/utils/mk-t-inc.gpc	2003-04-12 06:04:51.000000000 +0200
++++ gcc-3.3.1/gcc/p/utils/mk-t-inc	2003-07-18 10:27:36.000000000 +0200
+@@ -82,6 +82,6 @@ echo ""
+   cat "$GCCDIR/tree.def"
+   echo 'DEFTREECODE (LAST_AND_UNUSED_C_TREE_CODE, "unused", "x", 0)'
+   sed -e '/#else/,/#endif/d' "$GCCDIR/p/p-tree.def"
+-} | sed -ne '/^DEFTREECODE/{s,/\*.*\*/,,;p;}'
++} | sed -ne '/^DEFTREECODE/{s,/\*.*\*/,,;s/["'"'"']x["'"'"'].*/"x", 0)/;p;}'
+ 
+ } > "$2" || { rm -f "$2"; false; }
+--- gcc-3.3.1/gcc/p/declarations.c.gpc	2003-05-03 19:24:08.000000000 +0200
++++ gcc-3.3.1/gcc/p/declarations.c	2003-07-18 10:27:36.000000000 +0200
+@@ -404,7 +404,7 @@ poplevel (keep, reverse, routinebody)
+   if (block)
+     TREE_USED (block) = 1;
+ 
+-  free (level);
++  // free (level);
+ 
+   return block;
+ }
+--- gcc-3.3.1/gcc/p/Make-lang.in.gpc	2003-05-07 00:38:06.000000000 +0200
++++ gcc-3.3.1/gcc/p/Make-lang.in	2003-07-18 10:27:36.000000000 +0200
+@@ -1123,6 +1123,14 @@ pascal.stage4:
+ 	$(srcdir)/p/script/mkdir-p stage4/p/rts
+ 	-mv $(GPCSTAGESTUFF) stage4/p
+ 	-mv $(RTSSTAGESTUFF) stage4/p/rts
++pascal.stageprofile: stageprofile-start
++	$(srcdir)/p/script/mkdir-p stageprofile/p/rts
++	-mv $(GPCSTAGESTUFF) stageprofile/p
++	-mv $(RTSSTAGESTUFF) stageprofile/p/rts
++pascal.stagefeedback: stagefeedback-start
++	$(srcdir)/p/script/mkdir-p stagefeedback/p/rts
++	-mv $(GPCSTAGESTUFF) stagefeedback/p
++	-mv $(RTSSTAGESTUFF) stagefeedback/p/rts
+ 
+ # Maintenance hooks:
+ 
+--- gcc-3.3.1/gcc/p/config-lang.in.gpc	2003-04-27 09:31:26.000000000 +0200
++++ gcc-3.3.1/gcc/p/config-lang.in	2003-07-18 10:27:36.000000000 +0200
+@@ -52,7 +52,6 @@ if echo $version | grep '2\.9' > /dev/nu
+       echo "***" >&2
+       echo "*** Press ENTER to continue, Ctrl-C to abort." >&2
+       echo "***" >&2
+-      read junk
+     fi
+   fi
+ else
+--- gcc-3.3.1/gcc/p/predef.c.gpc	2003-05-02 13:40:33.000000000 +0200
++++ gcc-3.3.1/gcc/p/predef.c	2003-07-18 10:27:36.000000000 +0200
+@@ -275,7 +275,7 @@ init_predef ()
+               if (TYPE_NAME (type))
+                 type = build_type_copy ((orig = type));
+               TYPE_NAME (type) = decl = build_decl (TYPE_DECL, id, type);
+-              DECL_ORIGINAL_TYPE (decl) = orig;
++              DECL_ORIGINAL_TYPE (decl) = NULL_TREE;
+             }
+         }
+       if (kind == bk_special_syntax || kind == bk_routine)

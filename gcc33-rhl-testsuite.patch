@@ -1,0 +1,769 @@
+2003-04-23  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc.dg/tls/opt-6.c: New test.
+
+2003-04-05  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc.dg/20030405-1.c: New test.
+
+2003-03-19  Alan Modra  <amodra@bigpond.net.au>
+
+	PR target/10073
+	* gcc.c-torture/compile/20030319-1.c: New.
+
+2003-03-10  Jakub Jelinek  <jakub@redhat.com>
+
+	* g++.dg/opt/rtti1.C: New test.
+
+2003-02-25  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc.dg/20030225-2.c: New test.
+
+2003-02-20  Randolph Chung  <tausq@debian.org>
+
+	* gcc.c-torture/compile/20030220-1.c: New test.
+
+2003-02-18  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc.dg/20030217-1.c: New test.
+
+2003-01-29  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc.c-torture/compile/20020129-1.c: New test.
+
+2003-01-17  Richard Henderson  <rth@redhat.com>
+
+	* gcc.dg/tls/opt-5.c: New test.
+
+2002-12-21  Eric Botcazou  <ebotcazou@libertysurf.fr>
+
+	* gcc.dg/unroll-1.c: New test.
+
+2002-11-16  Jan Hubicka  <jh@suse.cz>
+
+	* gcc.c-torture/execute/20020920-1.c: New test.
+
+2002-10-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/7434
+	* gcc.c-torture/compile/20021008-1.c: New test.
+
+2002-08-10  Gwenole Beauchesne  <gbeauchesne@mandrakesoft.com>
+
+	PR target/7559
+	* testsuite/gcc.c-torture/execute/20020810-1.c: New test.
+
+2002-07-30  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc.dg/tls/opt-1.c: New test.
+
+2002-07-29  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc.dg/20020729-1.c: New test.
+
+2002-07-20  Jakub Jelinek  <jakub@redhat.com>
+
+	* g++.dg/opt/life1.C: New test.
+
+2002-05-20  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc.dg/20020525-1.c: New test.
+
+2003-02-04  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc.dg/20030204-1.c: New test.
+
+--- gcc-3.3.1/gcc/testsuite/g++.dg/opt/life1.C.rhl-testsuite	2003-07-16 17:55:03.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/g++.dg/opt/life1.C	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,16 @@
++// This testcase did not set up the pic register on IA-32 due
++// to bug in calculate_global_regs_live EH edge handling.
++// { dg-do compile { target i?86-*-linux* } }
++// { dg-options "-O2 -fPIC" }
++
++struct A { };
++
++void foo (A (*fn)())
++{
++  try {
++    A a = fn ();
++  } catch (...) {
++  }
++}
++
++// { dg-final { scan-assembler "GLOBAL_OFFSET_TABLE" } }
+--- gcc-3.3.1/gcc/testsuite/g++.dg/opt/reload2.C.rhl-testsuite	2003-07-16 17:55:03.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/g++.dg/opt/reload2.C	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,42 @@
++// PR 10352
++// { dg-do compile }
++// { dg-options -O2 }
++
++extern double fabs(double x);
++
++typedef struct { float x, y; } S;
++typedef struct _T T;
++
++extern void fT( T *p );
++extern T *h();
++extern S g( );
++
++static
++int f(void)
++{
++    T *t=0;
++    int c=0;
++    S s;
++
++    const S exp_s = {0.,0.};
++
++    if(!(t = h()))
++    {
++        c++;
++    }
++
++    if(!c)
++    {
++        s = g();
++        if( (fabs( (s.x) - (exp_s.x) ) > 1 )
++            || (fabs( (s.y) - (exp_s.y) ) > 1 ) )
++        {
++            c++;
++        }
++    }
++
++    if(t)
++        fT(t);
++
++    return c;
++}
+--- gcc-3.3.1/gcc/testsuite/g++.dg/opt/rtti1.C.rhl-testsuite	2003-07-16 17:55:03.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/g++.dg/opt/rtti1.C	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,20 @@
++// Test that typeid sees through references even when optimizing.
++// { dg-do run }
++// { dg-options "-O2" }
++
++#include <typeinfo>
++
++struct A
++{
++  virtual ~A() { }
++};
++
++class B : public A { };
++
++int main ()
++{
++  B b;
++  A &aref = b;
++
++  return typeid (aref) != typeid (b);
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.c-torture/compile/20020129-1.c.rhl-testsuite	2003-07-16 17:55:03.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.c-torture/compile/20020129-1.c	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,17 @@
++/* Test call to static variable.  */
++
++typedef struct
++{
++  long long a[10];
++} A;
++  
++void bar (A *);
++  
++typedef int (*B)(int);
++  
++void foo (void)
++{
++  static A a;
++  bar (&a);
++  (*(B)&a) (1);
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.c-torture/compile/20021008-1.c.rhl-testsuite	2003-07-16 17:55:03.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.c-torture/compile/20021008-1.c	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,11 @@
++/* Origin: PR target/7434 Gwenole Beauchesne <gbeauchesne@mandrakesoft.com> */
++
++int main(void)
++{
++  static const int align_g[] = { 1, 2, 4, 8, 16 };
++  char * buf;
++  int i = 0;
++  volatile long double val = 0;
++  val = *((long double *)(buf + align_g[i]));
++  return 0;
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.c-torture/compile/20030220-1.c.rhl-testsuite	2003-07-16 17:55:03.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.c-torture/compile/20030220-1.c	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,20 @@
++/* PR optimization/9768 */
++/* Originator: Randolph Chung <tausq@debian.org> */
++
++inline int fixfloor (long x)
++{
++  if (x >= 0)
++    return (x >> 16);
++  else
++    return ~((~x) >> 16);
++}
++
++inline int fixtoi (long x)
++{
++  return fixfloor(x) + ((x & 0x8000) >> 15);
++}
++
++int foo(long x, long y)
++{
++  return fixtoi(x*y);
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.c-torture/compile/20030319-1.c.rhl-testsuite	2003-07-16 17:55:04.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.c-torture/compile/20030319-1.c	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,14 @@
++/* PR 10073 */
++typedef struct
++{
++  unsigned short digits[4];
++} INT_64;
++
++INT_64 int_64_com (INT_64 a)
++{
++  a.digits[0] ^= 0xFFFF;
++  a.digits[1] ^= 0xFFFF;
++  a.digits[2] ^= 0xFFFF;
++  a.digits[3] ^= 0xFFFF;
++  return a;
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.c-torture/execute/20020810-1.c.rhl-testsuite	2003-07-16 17:55:04.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.c-torture/execute/20020810-1.c	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,38 @@
++/* PR target/7559
++   This testcase was miscompiled on x86-64, because classify_argument
++   wrongly computed the offset of nested structure fields.  */
++
++extern void abort (void);
++
++struct A
++{
++  long x;
++};
++
++struct R
++{
++  struct A a, b;
++};
++
++struct R R = { 100, 200 };
++
++void f (struct R r)
++{
++  if (r.a.x != R.a.x || r.b.x != R.b.x)
++    abort ();
++}
++
++struct R g (void)
++{
++  return R;
++}
++
++int main (void)
++{
++  struct R r;
++  f(R);
++  r = g();
++  if (r.a.x != R.a.x || r.b.x != R.b.x)
++    abort ();
++  return 0;
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.c-torture/execute/20020920-1.c.rhl-testsuite	2003-07-16 17:55:04.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.c-torture/execute/20020920-1.c	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,31 @@
++extern void abort (void);
++extern void exit (int);
++
++struct B
++{
++  int x;
++  int y;
++};
++
++struct A
++{
++  int z;
++  struct B b;
++};
++
++struct A
++f ()
++{
++  struct B b = { 0, 1 };
++  struct A a = { 2, b };
++  return a;
++}
++
++int
++main (void)
++{
++  struct A a = f ();
++  if (a.z != 2 || a.b.x != 0 || a.b.y != 1)
++    abort ();
++  exit (0);
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.dg/tls/opt-1.c.rhl-testsuite	2003-07-16 17:55:04.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.dg/tls/opt-1.c	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,28 @@
++/* { dg-do compile } */
++/* { dg-options "-O2 -fPIC" } */
++/* { dg-options "-O2 -fPIC -mcpu=i686" { target i?86-*-* } } */
++
++extern __thread int thr;
++
++static int x;
++
++static void
++bar (void)
++{
++  x = 1;
++}
++
++static void
++#ifdef __i386__
++__attribute__ ((regparm (3)))
++#endif
++foo (const char *x, void *y, int *z)
++{
++  bar ();
++}
++
++void
++test (const char *x, void *y)
++{
++  foo (x, y, &thr);
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.dg/tls/opt-5.c.rhl-testsuite	2003-07-16 17:55:04.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.dg/tls/opt-5.c	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,109 @@
++/* { dg-do compile } */
++/* { dg-options "-O2" } */
++/* Sched1 moved {load_tp} pattern between strlen call and the copy
++   of the hard return value to its pseudo.  This resulted in a
++   reload abort, since the hard register was not spillable.  */
++
++extern __thread int __libc_errno __attribute__ ((tls_model ("initial-exec")));
++
++struct stat64
++  {
++    long dummy[4];
++  };
++typedef __SIZE_TYPE__ size_t;
++typedef unsigned long long uint64_t;
++typedef int __mode_t;
++
++extern size_t strlen (__const char *__s) __attribute__ ((__pure__));
++extern int strcmp (__const char *__s1, __const char *__s2)
++     __attribute__ ((__pure__));
++
++extern int __open64 (__const char *__file, int __oflag, ...);
++extern int __open (__const char *__file, int __oflag, ...);
++extern int __mkdir (__const char *__path, __mode_t __mode);
++extern int __lxstat64 (int __ver, __const char *__filename,
++                       struct stat64 *__stat_buf) ;
++
++static const char letters[] =
++"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
++
++int
++__gen_tempname (char *tmpl, int kind)
++{
++  int len;
++  char *XXXXXX;
++  static uint64_t value;
++  uint64_t random_time_bits;
++  unsigned int count;
++  int fd = -1;
++  int save_errno = __libc_errno;
++  struct stat64 st;
++  unsigned int attempts_min = 62 * 62 * 62;
++  unsigned int attempts = attempts_min < 238328 ? 238328 : attempts_min;
++
++  len = strlen (tmpl);
++  if (len < 6 || strcmp(&tmpl[len - 6], "XXXXXX"))
++    {
++      (__libc_errno = (22));
++      return -1;
++    }
++
++  XXXXXX = &tmpl[len - 6];
++
++  for (count = 0; count < attempts; value += 7777, ++count)
++    {
++      uint64_t v = value;
++
++      XXXXXX[0] = letters[v % 62];
++      v /= 62;
++      XXXXXX[1] = letters[v % 62];
++      v /= 62;
++      XXXXXX[2] = letters[v % 62];
++      v /= 62;
++      XXXXXX[3] = letters[v % 62];
++      v /= 62;
++      XXXXXX[4] = letters[v % 62];
++      v /= 62;
++      XXXXXX[5] = letters[v % 62];
++
++      switch (kind)
++        {
++        case 0:
++          fd = __open (tmpl, 02 | 01000 | 04000, 0400 | 0200);
++          break;
++
++        case 1:
++          fd = __open64 (tmpl, 02 | 01000 | 04000, 0400 | 0200);
++          break;
++
++        case 2:
++          fd = __mkdir (tmpl, 0400 | 0200 | 0100);
++          break;
++
++        case 3:
++          if (__lxstat64 (2, tmpl, &st) < 0)
++            {
++              if (__libc_errno == 2)
++                {
++                  (__libc_errno = (save_errno));
++                  return 0;
++                }
++              else
++
++                return -1;
++            }
++          continue;
++        }
++
++      if (fd >= 0)
++        {
++          (__libc_errno = (save_errno));
++          return fd;
++        }
++      else if (__libc_errno != 17)
++        return -1;
++    }
++
++  (__libc_errno = (17));
++  return -1;
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.dg/tls/opt-6.c.rhl-testsuite	2003-07-16 17:55:04.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.dg/tls/opt-6.c	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,70 @@
++/* { dg-do compile } */
++/* { dg-options "-O2" } */
++
++extern void abort (void);
++extern void exit (int);
++
++struct A
++{
++  char a;
++  int b;
++  long long c;
++};
++extern __thread struct A a1, a2, a3, a4;
++extern struct A *f1a (void);
++extern struct A *f2a (void);
++extern struct A *f3a (void);
++extern struct A *f4a (void);
++extern struct A *f5a (void);
++extern struct A *f6a (void);
++extern struct A *f7a (void);
++extern struct A *f8a (void);
++extern struct A *f9a (void);
++extern struct A *f10a (void);
++extern int f1b (void);
++extern int f2b (void);
++extern int f3b (void);
++extern int f4b (void);
++extern int f5b (void);
++extern int f6b (void);
++extern int f7b (void);
++extern int f8b (void);
++extern int f9b (void);
++extern int f10b (void);
++extern void check1 (void);
++extern void check2 (void);
++__thread int dummy = 12;
++__thread struct A local = { 1, 2, 3 };
++
++int
++main (void)
++{
++  struct A *p;
++
++  if (local.a != 1 || local.b != 2 || local.c != 3)
++    abort ();
++  if (a1.a != 4 || a1.b != 5 || a1.c != 6)
++    abort ();
++  if (a2.a != 22 || a2.b != 23 || a2.c != 24)
++    abort ();
++  if (a3.a != 10 || a3.b != 11 || a3.c != 12)
++    abort ();
++  if (a4.a != 25 || a4.b != 26 || a4.c != 27)
++    abort ();
++  check1 ();
++  check2 ();
++  if (f1a () != &a1 || f2a () != &a2 || f3a () != &a3 || f4a () != &a4)
++    abort ();
++  p = f5a (); if (p->a != 16 || p->b != 16 + 1 || p->c != 16 + 2)
++    abort ();
++  p = f6a (); if (p->a != 19 || p->b != 19 + 1 || p->c != 19 + 2)
++    abort ();
++  if (f7a () != &a2 || f8a () != &a4)
++    abort ();
++  p = f9a (); if (p->a != 28 || p->b != 28 + 1 || p->c != 28 + 2)
++    abort ();
++  p = f10a (); if (p->a != 31 || p->b != 31 + 1 || p->c != 31 + 2)
++    abort ();
++
++  exit (0);
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.dg/20020525-1.c.rhl-testsuite	2003-07-16 17:55:04.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.dg/20020525-1.c	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,24 @@
++/* PR optimization/6703
++   Origin: Glen Nakamura <glen@imodulo.com> */
++/* { dg-do run } */
++/* { dg-options "-O2" } */
++
++extern void abort (void);
++extern void exit (int);
++
++void foo (int *x, int y)
++{
++  __builtin_memset (x, 0, y);
++}
++  
++int main ()
++{
++  int x[2] = { 0x5a5a5a5a, 0x5a5a5a5a };
++    
++  if (x[1] != 0x5a5a5a5a)
++    abort ();
++  foo (x, sizeof (int) + 1);
++  if (x[1] == 0x5a5a5a5a)
++    abort ();
++  exit (0);
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.dg/20020729-1.c.rhl-testsuite	2003-07-16 17:55:04.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.dg/20020729-1.c	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,51 @@
++/* { dg-do compile { target i?86-*-* } } */
++/* { dg-options "-O2 -march=k6" } */
++
++static inline void *
++baz (void *s, unsigned long c, unsigned int count)
++{
++  int d0, d1;
++  __asm__ __volatile__ (""
++			: "=&c" (d0), "=&D" (d1)
++			:"a" (c), "q" (count), "0" (count / 4), "1" ((long) s)
++			:"memory");
++  return s;
++}
++
++struct A
++{
++  unsigned long *a;
++};
++
++inline static void *
++bar (struct A *x, int y)
++{
++  char *ptr;
++
++  ptr = (void *) x->a[y >> 12];
++  ptr += y % (1UL << 12);
++  return (void *) ptr;
++}
++
++int
++foo (struct A *x, unsigned int *y, int z, int u)
++{
++  int a, b, c, d, e;
++
++  z += *y;
++  c = z + u;
++  a = (z >> 12) + 1;
++  do
++    {
++      b = (a << 12);
++      d = b - z;
++      e = c - z;
++      if (e < d)
++	d = e;
++      baz (bar (x, z), 0, d);
++      z = b;
++      a++;
++    }
++  while (z < c);
++  return 0;
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.dg/20030204-1.c.rhl-testsuite	2003-07-16 17:55:04.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.dg/20030204-1.c	2003-05-20 14:46:32.000000000 +0200
+@@ -0,0 +1,16 @@
++/* PR optimization/8555 */
++/* { dg-do compile } */
++/* { dg-options "-O -ffast-math -funroll-loops" } */
++/* { dg-options "-march=pentium3 -O -ffast-math -funroll-loops" { target i?86-*-* } } */
++
++float foo (float *a, int i)
++{
++  int j;
++  float x = a[j = i - 1], y;
++
++  for (j = i; --j >= 0; )
++    if ((y = a[j]) > x)
++      x = y;
++
++  return x;
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.dg/20030217-1.c.rhl-testsuite	2003-07-16 17:55:04.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.dg/20030217-1.c	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,18 @@
++/* Test whether denormal floating point constants in hexadecimal notation
++   are parsed correctly.  */
++/* { dg-do run { target i?86-*-linux* x86_64-*-* } } */
++/* { dg-options "-std=c99" } */
++
++long double d = 0x0.0000003ffffffff00000p-16357L;
++long double e = 0x0.0000003ffffffff00000p-16356L;
++
++extern void abort (void);
++extern void exit (int);
++
++int
++main (void)
++{
++  if (d != e / 2.0)
++    abort ();
++  exit (0);
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.dg/20030225-2.c.rhl-testsuite	2003-07-16 17:55:04.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.dg/20030225-2.c	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,43 @@
++/* { dg-do run { target ia64-*-linux* } } */
++/* { dg-options "-O3" } */
++
++int __attribute__((noinline, const))
++ret4 (float value)
++{
++  return 4;
++}
++
++int __attribute__((noinline, const))
++ret0 (float value)
++{
++  return 0;
++}
++
++float __attribute__((noinline))
++test (float x, float y)
++{
++  int clsx = ret4 (x);
++  int clsy = ret0 (y);
++
++  if (clsx == 0 || clsy == 0
++      || (y < 0 && clsx == 1 && clsy == 1))
++    return x - y;
++
++  return x < y ? 0 : x - y;
++}
++
++float a = 0.0, b;
++
++int main (void)
++{
++  unsigned long e;
++  b = a / a;
++  __asm__ __volatile__ ("mov.m %0=ar.fpsr" : "=r" (e));
++  e &= ~0x7e000UL;
++  __asm__ __volatile__ ("mov.m ar.fpsr=%0" :: "r" (e) : "memory");
++  a = test (0, b);
++  __asm__ __volatile__ ("mov.m %0=ar.fpsr" : "=r" (e));
++  if (e & 0x2000)
++    abort ();
++  exit (0);
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.dg/20030405-1.c.rhl-testsuite	2003-07-16 17:55:04.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.dg/20030405-1.c	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,29 @@
++/* { dg-do compile { target ia64-*-* } } */
++/* { dg-options "-O2" } */
++
++int
++foo (int x, int y)
++{
++  if (y == 0)
++    {
++      register long r8 asm ("r8");
++      register long r15 asm ("r15") = 1;
++      long retval;
++      __asm __volatile ("foo" : "=r" (r8), "=r" (r15) : "1" (r15));
++      retval = r8;
++      y = retval;
++    }
++
++  {
++    register long r8 asm ("r8");
++    register long r15 asm ("r15") = 2;
++    long retval;
++    register long _out1 asm ("out1") = x;
++    register long _out0 asm ("out0") = y;
++    __asm __volatile ("foo"
++		      : "=r" (r8), "=r" (r15) , "=r" (_out0), "=r" (_out1)
++		      : "1" (r15) , "2" (_out0), "3" (_out1));
++    retval = r8;
++    return retval;
++  }
++}
+--- gcc-3.3.1/gcc/testsuite/gcc.dg/string-opt-1.c.rhl-testsuite	2003-07-16 17:55:04.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.dg/string-opt-1.c	2003-06-03 12:37:44.000000000 +0200
+@@ -0,0 +1,11 @@
++/* Ensure mempcpy is not "optimized" into memcpy followed by addition.  */
++/* { dg-do compile } */
++/* { dg-options "-O2" } */
++
++void *
++fn (char *x, char *y, int z)
++{
++  return __builtin_mempcpy (x, y, z);
++}
++
++/* { dg-final { scan-assembler-not "memcpy" } } */
+--- gcc-3.3.1/gcc/testsuite/gcc.dg/unroll-1.c.rhl-testsuite	2003-07-16 17:55:04.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.dg/unroll-1.c	2003-05-20 14:52:40.000000000 +0200
+@@ -0,0 +1,26 @@
++/* PR optimization/8599 */
++/* { dg-do run } */
++/* { dg-options "-O2 -funroll-loops" } */
++/* { dg-options "-mcpu=k6 -O2 -funroll-loops" { target i?86-*-* } } */
++
++extern void abort (void);
++
++int array[6] = { 1,2,3,4,5,6 };
++
++void foo()
++{
++  int i;
++
++  for (i = 0; i < 5; i++)
++    array[i] = 0;
++}
++
++int main()
++{
++  foo();
++  if (array[0] || array [1] || array[2] || array[3] || array[4])
++    abort ();
++  if (array[5] != 6)
++    abort ();
++  return 0;
++}

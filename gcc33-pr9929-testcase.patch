@@ -1,0 +1,27 @@
+2003-04-06  Jan Hubicka  <jh@suse.cz>
+
+	PR target/9929
+	* reload.c (find_reloads_toplev):  Remove now redundant alternative
+	(find_reloads_address_1): Synchronize handling of subregs with
+	find_reloads_toplev;  Always reload whole subreg when the inner
+	value requires more registers.
+
+--- gcc-3.3.1/gcc/testsuite/gcc.dg/20030721-2.c.reload	2003-07-21 15:32:26.000000000 +0200
++++ gcc-3.3.1/gcc/testsuite/gcc.dg/20030721-2.c	2003-07-21 15:32:20.000000000 +0200
+@@ -0,0 +1,16 @@
++/* PR target/9929 */
++/* { dg-do compile } */
++/* { dg-options "-O -fPIC" } */
++
++typedef struct X {
++  char * ptr;
++  int    offset;
++} X_t;
++
++X_t foo(X_t *d1, char * A0);
++
++void bar() {
++  X_t l1, l2, l3;
++  l3 = foo(&l1, l2.ptr);
++  (*(X_t *)(l2.ptr + l3.offset)) = l1;
++}

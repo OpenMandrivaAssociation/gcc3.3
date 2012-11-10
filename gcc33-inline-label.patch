@@ -1,0 +1,55 @@
+2002-08-07  Jakub Jelinek  <jakub@redhat.com>
+
+	* tree-inline.c (remap_decl): Make sure DECL_TOO_LATE is clear for
+	remapped labels.
+
+	* gcc.c-torture/compile/20020807-1.c: New test.
+
+--- gcc/tree-inline.c.jj	2002-04-17 15:35:57.000000000 +0200
++++ gcc/tree-inline.c	2002-08-07 14:53:14.000000000 +0200
+@@ -145,6 +145,9 @@ remap_decl (decl, id)
+       t = copy_decl_for_inlining (decl, fn,
+ 				  VARRAY_TREE (id->fns, 0));
+ 
++      if (TREE_CODE (t) == LABEL_DECL)
++	DECL_TOO_LATE (t) = 0;
++
+       /* The decl T could be a dynamic array or other variable size type,
+ 	 in which case some fields need to be remapped because they may
+ 	 contain SAVE_EXPRs.  */
+--- gcc/testsuite/gcc.c-torture/compile/20020807-1.c.jj	2002-08-07 14:55:26.000000000 +0200
++++ gcc/testsuite/gcc.c-torture/compile/20020807-1.c	2002-08-07 14:22:07.000000000 +0200
+@@ -0,0 +1,33 @@
++int x;
++
++static int
++__attribute__ ((noinline))
++foo (void)
++{
++  return 0;
++}
++
++static void
++__attribute__ ((noinline))
++bar (void)
++{
++}
++
++static inline void
++baz (void)
++{
++  char arr[x];
++
++lab:
++  if (foo () == -1)
++    {
++      bar ();
++      goto lab;
++    }
++}
++
++void
++test (void)
++{
++  baz ();
++}

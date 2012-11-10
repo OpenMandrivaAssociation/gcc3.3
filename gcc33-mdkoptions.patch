@@ -1,0 +1,26 @@
+--- gcc-3.3.2/gcc/toplev.c.mdkoptions	2003-12-16 02:00:53.000000000 -0500
++++ gcc-3.3.2/gcc/toplev.c	2003-12-16 07:23:09.868518776 -0500
+@@ -5158,7 +5158,6 @@ parse_options_and_default_flags (argc, a
+       flag_optimize_sibling_calls = 1;
+       flag_cse_follow_jumps = 1;
+       flag_cse_skip_blocks = 1;
+-      flag_vrp = 1;
+       flag_gcse = 1;
+       flag_expensive_optimizations = 1;
+       flag_strength_reduce = 1;
+@@ -5178,7 +5177,6 @@ parse_options_and_default_flags (argc, a
+       flag_reorder_functions = 1;
+       flag_value_histograms = 1;
+       flag_value_profile_transformations = 1;
+-      flag_unit_at_a_time = 1;
+     }
+ 
+   if (optimize >= 3)
+@@ -5188,6 +5186,7 @@ parse_options_and_default_flags (argc, a
+       flag_tracer = 1;
+       flag_web = 1;
+       flag_unswitch_loops = 1;
++      flag_vrp = 1;
+     }
+ 
+   if (optimize < 2 || optimize_size)

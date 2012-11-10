@@ -1,0 +1,16 @@
+2004-02-10  Gwenole Beauchesne  <gbeauchesne@mandrakesoft.com>
+
+	* i386.h (TARGET_OPTIONS): Handle -mtune= for gcc3.4
+	compatibility.
+
+--- gcc-3.3.2/gcc/config/i386/i386.h.i386-mtune	2004-02-10 14:13:59.813501000 +0100
++++ gcc-3.3.2/gcc/config/i386/i386.h	2004-02-10 15:36:04.746797616 +0100
+@@ -435,6 +435,8 @@ extern int x86_prefetch_sse;
+ #define TARGET_OPTIONS						\
+ { { "cpu=",		&ix86_cpu_string,			\
+     N_("Schedule code for given CPU")},				\
++  { "tune=",		&ix86_cpu_string,			\
++    N_("Schedule code for given CPU")},				\
+   { "fpmath=",		&ix86_fpmath_string,			\
+     N_("Generate floating point mathematics using given instruction set")},\
+   { "arch=",		&ix86_arch_string,			\

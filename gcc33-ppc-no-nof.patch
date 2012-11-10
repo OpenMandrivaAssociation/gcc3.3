@@ -1,0 +1,42 @@
+--- gcc-3.3.4/gcc/config/rs6000/t-linux64bi.ppc-no-nof	2004-11-25 10:27:54.300510939 +0000
++++ gcc-3.3.4/gcc/config/rs6000/t-linux64bi	2004-11-25 10:52:22.751516154 +0000
+@@ -9,13 +9,12 @@ CRTSTUFF_T_CFLAGS_S = -mno-minimal-toc -
+ 
+ SHLIB_MAPFILES += $(srcdir)/config/rs6000/libgcc-ppc64.ver
+ 
+-MULTILIB_OPTIONS        = m64/m32 msoft-float
+-MULTILIB_DIRNAMES       = 64 32 nof
++MULTILIB_OPTIONS        = m64/m32
++MULTILIB_DIRNAMES       = 64 32
+ MULTILIB_EXTRA_OPTS     = fPIC mstrict-align
+-MULTILIB_EXCEPTIONS     = m64/msoft-float
+-MULTILIB_EXCLUSIONS     = m64/!m32/msoft-float
+-MULTILIB_OSDIRNAMES	= ../lib64 ../lib nof
+-MULTILIB_MATCHES        = $(MULTILIB_MATCHES_FLOAT)
++MULTILIB_EXCEPTIONS     =
++MULTILIB_EXCLUSIONS     =
++MULTILIB_OSDIRNAMES	= ../lib64 ../lib
+ 
+ # We want fine grained libraries, so use the new code to build the
+ # floating point emulation libraries.
+--- gcc-3.3.4/gcc/config/rs6000/t-linuxbi.ppc-no-nof	2004-11-25 10:27:54.300510939 +0000
++++ gcc-3.3.4/gcc/config/rs6000/t-linuxbi	2004-11-25 10:52:22.752515944 +0000
+@@ -9,13 +9,12 @@ CRTSTUFF_T_CFLAGS_S = -mno-minimal-toc -
+ 
+ SHLIB_MAPFILES += $(srcdir)/config/rs6000/libgcc-ppc64.ver
+ 
+-MULTILIB_OPTIONS        = m64/m32 msoft-float
+-MULTILIB_DIRNAMES       = 64 32 nof
++MULTILIB_OPTIONS        = m64/m32
++MULTILIB_DIRNAMES       = 64 32
+ MULTILIB_EXTRA_OPTS     = fPIC mstrict-align
+-MULTILIB_EXCEPTIONS     = m64/msoft-float
+-MULTILIB_EXCLUSIONS     = m64/!m32/msoft-float
+-MULTILIB_OSDIRNAMES	= ../lib64 ../lib nof
+-MULTILIB_MATCHES        = $(MULTILIB_MATCHES_FLOAT)
++MULTILIB_EXCEPTIONS     = 
++MULTILIB_EXCLUSIONS     = 
++MULTILIB_OSDIRNAMES	= ../lib64 ../lib
+ 
+ # We want fine grained libraries, so use the new code to build the
+ # floating point emulation libraries.

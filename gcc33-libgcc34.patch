@@ -1,0 +1,464 @@
+2003-02-09  Richard Henderson  <rth@redhat.com>
+
+	* libgcc-std.ver (__clztf2): New.
+	(__ctztf2, __popcounttf2, __paritytf2): New.
+	* libgcc2.c (__clzSI2, __clzDI2, __ctzSI2, __ctzDI2, __popcountSI2,
+	__popcountDI2, __paritySI2, __parityDI2): Use UWmode and UDWmode;
+	adjust code to match the different type sizes.
+	* libgcc2.h (__clzSI2, __ctzSI2, __popcountSI2, __paritySI2,
+	__clzDI2, __ctzDI2, __popcountDI2, __parityDI2): New macros.
+
+2003-02-04  Richard Henderson  <rth@redhat.com>
+
+	* libgcc2.h, libgcc2.c (__ffsSI2): New.
+	(__ffsDI2): Rename from __ffsdi2.
+	* mklibgcc.in (lib2funcs): Add _ffssi2.
+
+2003-02-04  Richard Henderson  <rth@redhat.com>
+
+	* libgcc2.c (__paritysi2, __paritydi2): Replace last two reduction
+	rounds with a "bit table" lookup.
+
+2003-02-04  Falk Hueffner  <falk.hueffner@student.uni-tuebingen.de>
+
+	PR c/9376
+	* libgcc2.c (__subvdi3): Fix typo.
+
+2003-02-03  Richard Henderson  <rth@redhat.com>
+
+	* libgcc2.c (__ffsdi2, __clzsi2, __clzdi2, __ctzsi2, __ctzdi2,
+	__popcountsi2, __popcountdi2, __paritysi2, __paritydi2): Change
+	return type to "int".  Shuffle declarations and undef int trap.
+	* libgcc2.h: Remove their declarations.
+
+2003-02-01  Richard Henderson  <rth@redhat.com>
+
+	* libgcc2.c: Include auto-host.h.
+	(ATTRIBUTE_HIDDEN): New.
+	(__clz_tab): Don't declare here for clz and ctz.
+	(__clzsi2, __clzdi2): Use count_leading_zeros.
+	(__ctzsi2, __ctzdi2): Use count_trailing_zeros.
+	(__popcount_tab): Mark ATTRIBUTE_HIDDEN.
+	(__paritysi2, __paritydi2): Use shifts instead of __popcount_tab.
+	* longlong.h (__clz_tab): Mark ATTRIBUTE_HIDDEN.
+
+2003-02-01  Richard Henderson  <rth@redhat.com>
+
+	* libgcc2.c (__ffsdi2, __clzsi2, __clzdi2, __ctzsi2, __ctzdi2,
+	__popcountsi2, __popcountdi2, __paritysi2 __paritydi2): Change
+	return type to Wtype.
+
+	* libgcc-std.ver (GCC_3.4): Fix inheritance.
+
+2003-02-01  Falk Hueffner  <falk.hueffner@student.uni-tuebingen.de>
+
+	* libgcc2.c (__clzsi2, __clzdi2, __ctzsi2, __ctzdi2,
+	__popcountsi2, __popcountdi2, __paritysi2 __paritydi2,
+	__popcount_tab): New.
+	* libgcc2.h: Declare them.
+	* libgcc-std.ver (GCC_3.4): Add new functions from libgcc2.c.
+	* genopinit.c (optabs): Add clz_optab, ctz_optab, popcount_optab
+	and parity_optab.
+	* Makefile.in (LIB2FUNCS_1, LIB2FUNCS_2): Move...
+	* mklibgcc.in (lib2funcs): ...here and merge.  Add new members.
+
+--- gcc/libgcc2.c	27 Jan 2003 23:22:15 -0000	1.157
++++ gcc/libgcc2.c	9 Feb 2003 18:35:22 -0000	1.164
+@@ -29,10 +29,14 @@ along with GCC; see the file COPYING.  I
+ Software Foundation, 59 Temple Place - Suite 330, Boston, MA
+ 02111-1307, USA.  */
+ 
++
++/* We include auto-host.h here to get HAVE_GAS_HIDDEN.  This is
++   supposedly valid even though this is a "target" file.  */
++#include "auto-host.h"
++
+ /* It is incorrect to include config.h here, because this file is being
+    compiled for the target, and hence definitions concerning only the host
+    do not apply.  */
+-
+ #include "tconfig.h"
+ #include "tsystem.h"
+ #include "coretypes.h"
+@@ -43,6 +47,12 @@ Software Foundation, 59 Temple Place - S
+ #undef abort
+ #endif
+ 
++#ifdef HAVE_GAS_HIDDEN
++#define ATTRIBUTE_HIDDEN  __attribute__ ((__visibility__ ("hidden")))
++#else
++#define ATTRIBUTE_HIDDEN
++#endif
++
+ #include "libgcc2.h"
+ 
+ #ifdef DECLARE_LIBRARY_RENAMES
+@@ -119,7 +129,7 @@ DWtype
+ __subvdi3 (DWtype a, DWtype b)
+ {
+ #ifdef L_addvdi3
+-  return (a, (-b));
++  return __addvdi3 (a, (-b));
+ #else
+   DWtype w;
+ 
+@@ -330,9 +340,27 @@ __ashrdi3 (DWtype u, word_type b)
+ }
+ #endif
+ 
++#ifdef L_ffssi2
++#undef int
++extern int __ffsSI2 (UWtype u);
++int
++__ffsSI2 (UWtype u)
++{
++  UWtype count;
++
++  if (u == 0)
++    return 0;
++
++  count_trailing_zeros (count, u);
++  return count + 1;
++}
++#endif
++
+ #ifdef L_ffsdi2
+-DWtype
+-__ffsdi2 (DWtype u)
++#undef int
++extern int __ffsDI2 (DWtype u);
++int
++__ffsDI2 (DWtype u)
+ {
+   DWunion uu;
+   UWtype word, count, add;
+@@ -507,6 +535,175 @@ const UQItype __clz_tab[] =
+   8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+   8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+ };
++#endif
++
++#ifdef L_clzsi2
++#undef int
++extern int __clzSI2 (UWtype x);
++int
++__clzSI2 (UWtype x)
++{
++  Wtype ret;
++
++  count_leading_zeros (ret, x);
++
++  return ret;
++}
++#endif
++
++#ifdef L_clzdi2
++#undef int
++extern int __clzDI2 (UDWtype x);
++int
++__clzDI2 (UDWtype x)
++{
++  DWunion uu;
++  UWtype word;
++  Wtype ret, add;
++
++  uu.ll = x;
++  if (uu.s.high)
++    word = uu.s.high, add = 0;
++  else
++    word = uu.s.low, add = W_TYPE_SIZE;
++
++  count_leading_zeros (ret, word);
++  return ret + add;
++}
++#endif
++
++#ifdef L_ctzsi2
++#undef int
++extern int __ctzSI2 (UWtype x);
++int
++__ctzSI2 (UWtype x)
++{
++  Wtype ret;
++
++  count_trailing_zeros (ret, x);
++
++  return ret;
++}
++#endif
++
++#ifdef L_ctzdi2
++#undef int
++extern int __ctzDI2 (UDWtype x);
++int
++__ctzDI2 (UDWtype x)
++{
++  DWunion uu;
++  UWtype word;
++  Wtype ret, add;
++
++  uu.ll = x;
++  if (uu.s.low)
++    word = uu.s.low, add = 0;
++  else
++    word = uu.s.high, add = W_TYPE_SIZE;
++
++  count_trailing_zeros (ret, word);
++  return ret + add;
++}
++#endif
++
++#if (defined (L_popcountsi2) || defined (L_popcountdi2)	\
++     || defined (L_popcount_tab))
++extern const UQItype __popcount_tab[] ATTRIBUTE_HIDDEN;
++#endif
++
++#ifdef L_popcount_tab
++const UQItype __popcount_tab[] =
++{
++    0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4,1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,
++    1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
++    1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
++    2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
++    1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
++    2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
++    2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
++    3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,4,5,5,6,5,6,6,7,5,6,6,7,6,7,7,8,
++};
++#endif
++
++#ifdef L_popcountsi2
++#undef int
++extern int __popcountSI2 (UWtype x);
++int
++__popcountSI2 (UWtype x)
++{
++  UWtype i, ret = 0;
++
++  for (i = 0; i < W_TYPE_SIZE; i += 8)
++    ret += __popcount_tab[(x >> i) & 0xff];
++
++  return ret;
++}
++#endif
++
++#ifdef L_popcountdi2
++#undef int
++extern int __popcountDI2 (UDWtype x);
++int
++__popcountDI2 (UDWtype x)
++{
++  UWtype i, ret = 0;
++
++  for (i = 0; i < 2*W_TYPE_SIZE; i += 8)
++    ret += __popcount_tab[(x >> i) & 0xff];
++
++  return ret;
++}
++#endif
++
++#ifdef L_paritysi2
++#undef int
++extern int __paritySI2 (UWtype x);
++int
++__paritySI2 (UWtype x)
++{
++#if W_TYPE_SIZE > 64
++# error "fill out the table"
++#endif
++#if W_TYPE_SIZE > 32
++  x ^= x >> 32;
++#endif
++#if W_TYPE_SIZE > 16
++  x ^= x >> 16;
++#endif
++  x ^= x >> 8;
++  x ^= x >> 4;
++  x &= 0xf;
++  return (0x6996 >> x) & 1;
++}
++#endif
++
++#ifdef L_paritydi2
++#undef int
++extern int __parityDI2 (UDWtype x);
++int
++__parityDI2 (UDWtype x)
++{
++  DWunion uu;
++  UWtype nx;
++
++  uu.ll = x;
++  nx = uu.s.low ^ uu.s.high;
++
++#if W_TYPE_SIZE > 64
++# error "fill out the table"
++#endif
++#if W_TYPE_SIZE > 32
++  nx ^= nx >> 32;
++#endif
++#if W_TYPE_SIZE > 16
++  nx ^= nx >> 16;
++#endif
++  nx ^= nx >> 8;
++  nx ^= nx >> 4;
++  nx &= 0xf;
++  return (0x6996 >> nx) & 1;
++}
+ #endif
+ 
+ #ifdef L_udivmoddi4
+--- gcc/libgcc2.h	16 Dec 2002 18:19:42 -0000	1.22
++++ gcc/libgcc2.h	9 Feb 2003 18:35:22 -0000	1.26
+@@ -182,7 +182,6 @@ typedef int word_type __attribute__ ((mo
+ #define __lshrdi3	__NDW(lshr,3)
+ #define __ashldi3	__NDW(ashl,3)
+ #define __ashrdi3	__NDW(ashr,3)
+-#define __ffsdi2	__NDW(ffs,2)
+ #define __cmpdi2	__NDW(cmp,2)
+ #define __ucmpdi2	__NDW(ucmp,2)
+ #define __udivmoddi4	__NDW(udivmod,4)
+@@ -203,6 +202,17 @@ typedef int word_type __attribute__ ((mo
+ #define __fixunsdfSI	__NW(fixunsdf,)
+ #define __fixunssfSI	__NW(fixunssf,)
+ 
++#define __ffsSI2	__NW(ffs,2)
++#define __clzSI2	__NW(clz,2)
++#define __ctzSI2	__NW(ctz,2)
++#define __popcountSI2	__NW(popcount,2)
++#define __paritySI2	__NW(parity,2)
++#define __ffsDI2	__NDW(ffs,2)
++#define __clzDI2	__NDW(clz,2)
++#define __ctzDI2	__NDW(ctz,2)
++#define __popcountDI2	__NDW(popcount,2)
++#define __parityDI2	__NDW(parity,2)
++
+ extern DWtype __muldi3 (DWtype, DWtype);
+ extern DWtype __divdi3 (DWtype, DWtype);
+ extern UDWtype __udivdi3 (UDWtype, UDWtype);
+@@ -223,7 +233,6 @@ extern DWtype __negdi2 (DWtype);
+ extern DWtype __lshrdi3 (DWtype, word_type);
+ extern DWtype __ashldi3 (DWtype, word_type);
+ extern DWtype __ashrdi3 (DWtype, word_type);
+-extern DWtype __ffsdi2 (DWtype);
+ 
+ /* __udiv_w_sdiv is static inline when building other libgcc2 portions.  */
+ #if (!defined(L_udivdi3) && !defined(L_divdi3) && \
+--- gcc/libgcc-std.ver	3 Dec 2002 22:04:22 -0000	1.16
++++ gcc/libgcc-std.ver	9 Feb 2003 18:35:22 -0000	1.18
+@@ -180,3 +180,20 @@ GCC_3.0 {
+ GCC_3.3 {
+   _Unwind_FindEnclosingFunction
+ }
++
++%inherit GCC_3.4 GCC_3.3
++GCC_3.4 {
++  # bit scanning and counting built-ins
++  __clzsi2
++  __clzdi2
++  __clzti2
++  __ctzsi2
++  __ctzdi2
++  __ctzti2
++  __popcountsi2
++  __popcountdi2
++  __popcountti2
++  __paritysi2
++  __paritydi2
++  __parityti2
++}
+--- gcc/Makefile.in	29 Jan 2003 12:32:08 -0000	1.983
++++ gcc/Makefile.in	26 Feb 2003 11:09:29 -0000	1.1004
+@@ -814,16 +813,6 @@ STAGESTUFF = *$(objext) insn-flags.h ins
+  *.[0-9][0-9].* *.[si] libcpp.a libbackend.a libgcc.mk \
+  $(LANG_STAGESTUFF)
+ 
+-# Library members defined in libgcc2.c.
+-# Variable length limited to 255 charactes when passed to a shell script.
+-LIB2FUNCS_1 = _muldi3 _negdi2 _lshrdi3 _ashldi3 _ashrdi3 _ffsdi2 _clz \
+-    _cmpdi2 _ucmpdi2 _floatdidf _floatdisf _fixunsdfsi _fixunssfsi \
+-    _fixunsdfdi _fixdfdi _fixunssfdi _fixsfdi _fixxfdi _fixunsxfdi
+-
+-LIB2FUNCS_2 = _floatdixf _fixunsxfsi _fixtfdi _fixunstfdi _floatditf \
+-    _clear_cache _trampoline __main _exit _absvsi2 _absvdi2 _addvsi3 \
+-    _addvdi3 _subvsi3 _subvdi3 _mulvsi3 _mulvdi3 _negvsi2 _negvdi2 _ctors
+-
+ # Defined in libgcc2.c, included only in the static library.
+ LIB2FUNCS_ST = _eprintf __gcc_bcmp
+ 
+@@ -1054,8 +1043,6 @@ LIB2ADD_ST = $(LIB2FUNCS_STATIC_EXTRA)
+ libgcc.mk: config.status Makefile mklibgcc $(LIB2ADD) $(LIB2ADD_ST) xgcc$(exeext) specs
+ 	objext='$(objext)' \
+ 	LIB1ASMFUNCS='$(LIB1ASMFUNCS)' \
+-	LIB2FUNCS_1='$(LIB2FUNCS_1)' \
+-	LIB2FUNCS_2='$(LIB2FUNCS_2)' \
+ 	LIB2FUNCS_ST='$(LIB2FUNCS_ST)' \
+ 	LIBGCOV='$(LIBGCOV)' \
+ 	LIB2ADD='$(LIB2ADD)' \
+--- gcc/mklibgcc.in	27 Jan 2003 23:22:15 -0000	1.53
++++ gcc/mklibgcc.in	5 Feb 2003 00:52:24 -0000	1.55
+@@ -9,8 +9,6 @@
+ #
+ # objext
+ # LIB1ASMFUNCS
+-# LIB2FUNCS_1
+-# LIB2FUNCS_2
+ # LIB2FUNCS_ST
+ # LIBGCOV
+ # LIB2ADD
+@@ -45,6 +43,16 @@ echo
+ echo 'force:'
+ echo
+ 
++# Library members defined in libgcc2.c.
++lib2funcs='_muldi3 _negdi2 _lshrdi3 _ashldi3 _ashrdi3
++	_cmpdi2 _ucmpdi2 _floatdidf _floatdisf _fixunsdfsi _fixunssfsi
++	_fixunsdfdi _fixdfdi _fixunssfdi _fixsfdi _fixxfdi _fixunsxfdi
++	_floatdixf _fixunsxfsi _fixtfdi _fixunstfdi _floatditf _clear_cache
++	_trampoline __main _exit _absvsi2 _absvdi2 _addvsi3 _addvdi3
++	_subvsi3 _subvdi3 _mulvsi3 _mulvdi3 _negvsi2 _negvdi2 _ctors
++	_ffssi2 _ffsdi2 _clz _clzsi2 _clzdi2 _ctzsi2 _ctzdi2 _popcount_tab
++	_popcountsi2 _popcountdi2 _paritysi2 _paritydi2'
++
+ # Disable SHLIB_LINK if shared libgcc not enabled.
+ if [ "@enable_shared@" = "no" ]; then
+   SHLIB_LINK=""
+@@ -88,14 +96,11 @@ for name in $LIB1ASMFUNCS; do
+     echo "	$gcc_compile" $flags -DL$name -xassembler-with-cpp \
+ 	  -c '$(srcdir)/config/$(LIB1ASMSRC)' -o $out
+ 
+-    # Remove any objects from LIB2FUNCS and LIB2_DIVMOD_FUNCS that are
++    # Remove any objects from lib2funcs and LIB2_DIVMOD_FUNCS that are
+     # defined as optimized assembly code in LIB1ASMFUNCS.
+-    LIB2FUNCS_1=`echo $LIB2FUNCS_1 | sed -e 's/^'$name' //' \
+-				         -e 's/ '$name' / /' \
+-				         -e 's/ '$name'$//'`
+-    LIB2FUNCS_2=`echo $LIB2FUNCS_2 | sed -e 's/^'$name' //' \
+-				         -e 's/ '$name' / /' \
+-				         -e 's/ '$name'$//'`
++    lib2funcs=`echo $lib2funcs | sed -e 's/^'$name' //' \
++				     -e 's/ '$name' / /' \
++				     -e 's/ '$name'$//'`
+     LIB2_DIVMOD_FUNCS=`echo $LIB2_DIVMOD_FUNCS | sed -e 's/^'$name' //' \
+ 				                     -e 's/ '$name' / /' \
+ 				                     -e 's/ '$name'$//'`
+@@ -111,7 +116,7 @@ libgcc2_objs=""
+ libgcc2_st_objs=""
+ libgcc2_eh_objs=""
+ 
+-for name in $LIB2FUNCS_1 $LIB2FUNCS_2; do
++for name in $lib2funcs; do
+   for ml in $MULTILIBS; do
+     dir=`echo ${ml} | sed -e 's/;.*$//' -e 's/=/$(EQ)/g'`
+     flags=`echo ${ml} | sed -e 's/^[^;]*;//' -e 's/@/ -/g'`;
+--- gcc/longlong.h	3 Oct 2002 20:39:08 -0000	1.33
++++ gcc/longlong.h	4 Feb 2003 21:48:42 -0000	1.35
+@@ -1287,7 +1285,7 @@ UDItype __umulsidi3 (USItype, USItype);
+ #endif
+ 
+ #if !defined (count_leading_zeros)
+-extern const UQItype __clz_tab[];
++extern const UQItype __clz_tab[] ATTRIBUTE_HIDDEN;
+ #define count_leading_zeros(count, x) \
+   do {									\
+     UWtype __xr = (x);							\

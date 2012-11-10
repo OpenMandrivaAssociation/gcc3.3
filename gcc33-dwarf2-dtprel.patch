@@ -1,0 +1,57 @@
+2003-03-18  Jakub Jelinek  <jakub@redhat.com>
+
+	* config/ia64/ia64.c (ia64_output_dwarf_dtprel): New.
+	* config/ia64/ia64-protos.h (ia64_output_dwarf_dtprel): New proto.
+	* config/ia64/ia64.h (ASM_OUTPUT_DWARF_DTPREL): Define.
+
+--- gcc-3.3.1/gcc/config/ia64/ia64.h.dwarf2-dtprel	2003-04-20 18:26:45.000000000 +0200
++++ gcc-3.3.1/gcc/config/ia64/ia64.h	2003-07-16 12:05:41.000000000 +0200
+@@ -2045,6 +2045,13 @@ do {									\
+   { "loc79", LOC_REG (79) }, 						\
+ }
+ 
++/* Emit a dtp-relative reference to a TLS variable.  */
++
++#ifdef HAVE_AS_TLS
++#define ASM_OUTPUT_DWARF_DTPREL(FILE, SIZE, X) \
++  ia64_output_dwarf_dtprel (FILE, SIZE, X)
++#endif
++
+ /* A C compound statement to output to stdio stream STREAM the assembler syntax
+    for an instruction operand X.  X is an RTL expression.  */
+ 
+--- gcc-3.3.1/gcc/config/ia64/ia64.c.dwarf2-dtprel	2003-05-09 16:05:23.000000000 +0200
++++ gcc-3.3.1/gcc/config/ia64/ia64.c	2003-07-16 12:05:41.000000000 +0200
+@@ -3737,6 +3737,22 @@ ia64_function_value (valtype, func)
+     }
+ }
+ 
++/* This is called from dwarf2out.c via ASM_OUTPUT_DWARF_DTPREL.
++   We need to emit DTP-relative relocations.  */
++
++void
++ia64_output_dwarf_dtprel (file, size, x)
++     FILE *file;
++     int size;
++     rtx x;
++{
++  if (size != 8)
++    abort ();
++  fputs ("\tdata8.ua\t@dtprel(", file);
++  output_addr_const (file, x);
++  fputs (")", file);
++}
++
+ /* Print a memory address as an operand to reference that memory location.  */
+ 
+ /* ??? Do we need this?  It gets used only for 'a' operands.  We could perhaps
+--- gcc-3.3.1/gcc/config/ia64/ia64-protos.h.dwarf2-dtprel	2003-04-20 18:26:45.000000000 +0200
++++ gcc-3.3.1/gcc/config/ia64/ia64-protos.h	2003-07-16 12:05:41.000000000 +0200
+@@ -95,6 +95,7 @@ extern void ia64_print_operand PARAMS((F
+ extern enum reg_class ia64_secondary_reload_class PARAMS((enum reg_class,
+ 							  enum machine_mode,
+ 							  rtx));
++extern void ia64_output_dwarf_dtprel PARAMS ((FILE*, int, rtx));
+ extern void ia64_reorg PARAMS((rtx));
+ extern void process_for_unwind_directive PARAMS ((FILE *, rtx));
+ extern const char *get_bundle_name PARAMS ((int));

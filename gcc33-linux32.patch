@@ -1,0 +1,123 @@
+2005-01-12  Gwenole Beauchesne  <gbeauchesne@mandrakesoft.com>
+
+	* gcc/gcc.c (biarch_specific_options): New. Disable 64-bit code
+	generation if running under a 32-bit personality.
+	(process_command): Use biarch_specific_options.
+	* gcc/config/i386/biarch64.h (TARGET_32BIT_PERSONALITY): Define.
+
+--- gcc-3.4.4/gcc/config/i386/biarch64.h.biarch-personality	2003-09-25 23:28:27.000000000 -0400
++++ gcc-3.4.4/gcc/config/i386/biarch64.h	2005-01-12 16:45:01.508308332 -0500
+@@ -23,3 +23,10 @@ Boston, MA 02111-1307, USA.  */
+ 
+ #define TARGET_64BIT_DEFAULT MASK_64BIT
+ #define TARGET_BI_ARCH 1
++
++#if defined(__linux__)
++#include <sys/syscall.h>
++#include <sys/personality.h>
++#define TARGET_32BIT_PERSONALITY \
++		((syscall(SYS_personality, 0xffffffff) & PER_MASK) == PER_LINUX32)
++#endif
+--- gcc-3.4.4/gcc/gcc.c.biarch-personality	2004-12-28 08:03:09.000000000 -0500
++++ gcc-3.4.4/gcc/gcc.c	2005-01-12 18:18:46.261942113 -0500
+@@ -1306,6 +1306,90 @@ translate_options (int *argcp, const cha
+   *argvp = newv;
+   *argcp = newindex;
+ }
++
++/* On biarch platforms, scan the options described by *ARGCP and *ARGVP.
++   If gcc is running under a 32-bit personality and no -m32/-m64
++   appeared on the command line, switch gcc to generate 32-bit code
++   instead of 64-bit code.  */
++
++static void
++biarch_specific_options (int *argcp, const char *const **argvp)
++{
++#ifdef TARGET_32BIT_PERSONALITY
++  if (TARGET_32BIT_PERSONALITY)
++    {
++      int i;
++
++      /* If nonzero, the user gave us the `-m32' or `-m64' flag.  */
++      int saw_mode_flag = 0;
++
++      /* Used to track options that take arguments, so we don't go wrapping
++	 those with -xc++/-xnone.  */
++      const char *quote = NULL;
++
++      /* The new argument list will be contained in this.  */
++      const char **arglist;
++
++      /* The total number of arguments with the new stuff.  */
++      int argc;
++
++      /* The argument list.  */
++      const char *const *argv;
++
++      argc = *argcp;
++      argv = *argvp;
++      for (i = 1; i < argc; i++)
++	{
++	  /* If the previous option took an argument, we swallow it here.  */
++	  if (quote)
++	    {
++	      quote = NULL;
++	      continue;
++	    }
++
++	  /* We don't do this anymore, since we don't get them with minus
++	     signs on them.  */
++	  if (argv[i][0] == '\0' || argv[i][1] == '\0')
++	    continue;
++
++	  if (argv[i][0] == '-')
++	    {
++	      if (strcmp (argv[i], "-m32") == 0
++		  || strcmp (argv[i], "-m64") == 0)
++		saw_mode_flag = 1;
++	      else if (((argv[i][2] == '\0'
++			 && strchr ("bBVDUoeTuIYmLiA", argv[i][1]) != NULL)
++			|| strcmp (argv[i], "-Xlinker") == 0
++			|| strcmp (argv[i], "-Tdata") == 0))
++		quote = argv[i];
++	      else
++		/* Pass other options through.  */
++		continue;
++	    }
++	}
++
++      if (quote)
++	fatal ("argument to `%s' missing\n", quote);
++
++      /* If we know we don't have to do anything, bail now.  */
++      if (saw_mode_flag)
++	return;
++
++      /* Make sure to have room for the trailing NULL argument.  */
++      arglist = xmalloc ((argc + 2) * sizeof (char *));
++
++      /* Copy the arguments and add new -m32 argument.  */
++      for (i = 0; i < argc; i++)
++	arglist[i] = argv[i];
++      arglist[i++] = "-m32";
++      arglist[i] = NULL;
++
++      *argcp = i;
++      *argvp = arglist;
++    }
++#endif
++}
++
+ 
+ static char *
+ skip_whitespace (char *p)
+@@ -3331,6 +3415,9 @@ process_command (int argc, const char **
+   /* Do language-specific adjustment/addition of flags.  */
+   lang_specific_driver (&argc, (const char *const **) &argv, &added_libraries);
+ 
++  /* Do biarch-specific adjustment/addition of flags.  */
++  biarch_specific_options (&argc, (const char *const **) &argv);
++
+   /* Scan argv twice.  Here, the first time, just count how many switches
+      there will be in their vector, and how many input files in theirs.
+      Here we also parse the switches that cc itself uses (e.g. -v).  */

@@ -1,0 +1,53 @@
+Hello,
+
+in the appended testcase (obtained from linux kernel), the following
+bug occurred: load motion decides to optimize non-volatile instance
+of src_pte, and not to take volatile instance into account.  When
+checking for availability, we however consider these instances to be equal,
+which causes us to believe that the second load of pte is redundant.
+
+The patch fixes it.
+
+Zdenek
+
+typedef struct { unsigned long pte_low; } pte_t;
+static inline void clear_bit(int nr, volatile void * addr)
+{
+        __asm__ __volatile__(
+                "btrl %1,%0"
+                :"=m" ((*(volatile long *) addr))
+                :"Ir" (nr));
+}
+static inline void ptep_set_wrprotect(pte_t *ptep) { clear_bit(1, ptep); }
+int copy_page_range(void)
+{
+        pte_t * src_pte;
+        pte_t pte = *src_pte;
+
+        if (pte.pte_low) {
+             ptep_set_wrprotect(src_pte);
+             pte = *src_pte;
+           }
+
+	foo (pte);
+
+        return 0;
+}
+
+Changelog:
+	* gcse.c (expr_equiv_p): Don't consider anything to be equal to
+	volatile mem.
+
+--- gcc-3.3.2/gcc/gcse.c.gcse-volatile	2003-12-16 07:34:30.000000000 -0500
++++ gcc-3.3.2/gcc/gcse.c	2003-12-18 05:37:29.929715352 -0500
+@@ -1845,6 +1845,10 @@ expr_equiv_p (x, y)
+ 	 due to it being set with the different alias set.  */
+       if (MEM_ALIAS_SET (x) != MEM_ALIAS_SET (y))
+ 	return 0;
++
++      /* A volatile mem should not be considered equivalent to any other.  */
++      if (MEM_VOLATILE_P (x) || MEM_VOLATILE_P (y))
++	return 0;
+       break;
+ 
+     /*  For commutative operations, check both orders.  */

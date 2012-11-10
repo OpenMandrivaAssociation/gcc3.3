@@ -1,0 +1,8 @@
+sources:
+  "build_cross_gcc3.3.sh:"	fe4ea4881cfe5f6a3725bbf4c2cacec8d44ed4f9
+  "colorgcc-1.3.2.tar.bz2:"	3e85b169a9374831a0235650158ed3abd28ac448
+  "gcc31-java.bz2:"	2192b6b0f6fd97a5de9a9f3bc049c952239a7c20
+  "gcc31-javac.bz2:"	131054231e5679e41fafe5825cba3f16c8660e79
+  "gcc32-jdk-config.bz2:"	23f8545d308a4a71b92ab31c1b60ae76cce4d67e
+  "gcc33-help2man.pl.bz2:"	0fe2b3f3623b0dc760f0635d32b4bfcc3da77212
+  "gpc-20030507.tar.bz2:"	204220e9084c9ce4e622df752abf00037f42d7fe

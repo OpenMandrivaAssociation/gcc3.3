@@ -1,0 +1,150 @@
+2005-10-19  Gwenole Beauchesne  <gbeauchesne@mandriva.com>
+
+	Backport from 4.0-branch for ppc64 case only.
+
+	2005-01-31  Alan Modra  <amodra@bigpond.net.au>
+	* config/rs6000/linux-unwind.h (struct gcc_vregs): New.
+	(struct gcc_regs): Rename from gcc_pt_regs.  Add more regs.
+	(struct gcc_sigcontext): Delete.  Merge contents to..
+	(struct gcc_ucontext): ..here.
+	(get_sigcontext): Delete.
+	(get_regs): New function, like get_sigcontext but return regs ptr.
+	64-bit version finds regs from r1 to support vdso.
+	(ppc_linux_aux_vector): New function.
+	(ppc_fallback_frame_state): Modify for get_regs.
+
+--- gcc-3.3.6/gcc/config/rs6000/linux64.h.ppc64-unwind-fixes	2005-10-17 09:14:34.000000000 -0400
++++ gcc-3.3.6/gcc/config/rs6000/linux64.h	2005-10-19 05:14:19.000000000 -0400
+@@ -614,6 +614,45 @@ enum { SIGNAL_FRAMESIZE = 64 };
+ 
+ #ifdef __powerpc64__
+ 
++struct gcc_vregs
++{
++  __attribute__ ((vector_size (16))) int vr[32];
++  unsigned int pad1[3];
++  unsigned int vscr;
++  unsigned int vsave;
++  unsigned int pad2[3];
++};
++
++struct gcc_regs
++{
++  unsigned long gpr[32];
++  unsigned long nip;
++  unsigned long msr;
++  unsigned long orig_gpr3;
++  unsigned long ctr;
++  unsigned long link;
++  unsigned long xer;
++  unsigned long ccr;
++  unsigned long softe;
++  unsigned long trap;
++  unsigned long dar;
++  unsigned long dsisr;
++  unsigned long result;
++  unsigned long pad1[4];
++  double fpr[32];
++  unsigned int pad2;
++  unsigned int fpscr;
++  struct gcc_vregs *vp;
++  struct gcc_vregs vregs;
++};
++
++struct gcc_ucontext
++{
++  unsigned long pad[28];
++  struct gcc_regs *regs;
++  struct gcc_regs rsave;
++};
++
+ /* If the current unwind info (FS) does not contain explicit info
+    saving R2, then we have to do a minor amount of code reading to
+    figure out if it was saved.  The big problem here is that the
+@@ -635,7 +674,7 @@ enum { SIGNAL_FRAMESIZE = 64 };
+ #define MD_FALLBACK_FRAME_STATE_FOR(CONTEXT, FS, SUCCESS)		\
+   do {									\
+     unsigned char *pc_ = (CONTEXT)->ra;					\
+-    struct sigcontext *sc_;						\
++    struct gcc_regs *regs_; 						\
+     long new_cfa_;							\
+     int i_;								\
+ 									\
+@@ -648,42 +687,59 @@ enum { SIGNAL_FRAMESIZE = 64 };
+       {									\
+ 	struct sigframe {						\
+ 	  char gap[SIGNAL_FRAMESIZE];					\
+-	  struct sigcontext sigctx;					\
+-	} *rt_ = (CONTEXT)->cfa;					\
+-	sc_ = &rt_->sigctx;						\
++	unsigned long pad[7];						\
++	struct gcc_regs *regs;						\
++	} *frame_ = (struct sigframe *)(CONTEXT)->cfa;			\
++	regs_ = frame_->regs;						\
+       }									\
+     else if (*(unsigned int *) (pc_+4) == 0x380000AC)			\
+       {									\
+-	struct rt_sigframe {						\
++        struct rt_sigframe_24 {						\
+ 	  int tramp[6];							\
+-	  struct siginfo *pinfo;					\
+-	  struct ucontext *puc;						\
+-	} *rt_ = (struct rt_sigframe *) pc_;				\
+-	sc_ = &rt_->puc->uc_mcontext;					\
++	  void *pinfo;							\
++	  struct gcc_ucontext *puc;					\
++        } *frame24_ = (struct rt_sigframe_24 *) pc_;			\
++  									\
++        /* Test for magic value in *puc of vdso.  */			\
++        if ((long) frame24_->puc != -21 * 8)				\
++	  regs_ = frame24_->puc->regs;					\
++        else								\
++	  {								\
++	    /* This works for 2.4.21 and later kernels.  */		\
++	    struct rt_sigframe {					\
++	      char gap[SIGNAL_FRAMESIZE];				\
++	      struct gcc_ucontext uc;					\
++	      unsigned long pad[2];					\
++	      int tramp[6];						\
++	      void *pinfo;						\
++	      struct gcc_ucontext *puc;					\
++	    } *frame_ = (struct rt_sigframe *) (CONTEXT)->cfa;		\
++	    regs_ = frame_->uc.regs;					\
++	  }								\
+       }									\
+     else								\
+       break;								\
+-    									\
+-    new_cfa_ = sc_->regs->gpr[STACK_POINTER_REGNUM];			\
++									\
++    new_cfa_ = regs_->gpr[STACK_POINTER_REGNUM];			\
+     (FS)->cfa_how = CFA_REG_OFFSET;					\
+     (FS)->cfa_reg = STACK_POINTER_REGNUM;				\
+     (FS)->cfa_offset = new_cfa_ - (long) (CONTEXT)->cfa;		\
+-    									\
++									\
+     for (i_ = 0; i_ < 32; i_++)						\
+       if (i_ != STACK_POINTER_REGNUM)					\
+-	{	    							\
++	{								\
+ 	  (FS)->regs.reg[i_].how = REG_SAVED_OFFSET;			\
+-	  (FS)->regs.reg[i_].loc.offset 				\
+-	    = (long)&(sc_->regs->gpr[i_]) - new_cfa_;			\
++	  (FS)->regs.reg[i_].loc.offset					\
++	    = (long)&(regs_->gpr[i_]) - new_cfa_;			\
+ 	}								\
+ 									\
+     (FS)->regs.reg[LINK_REGISTER_REGNUM].how = REG_SAVED_OFFSET;	\
+-    (FS)->regs.reg[LINK_REGISTER_REGNUM].loc.offset 			\
+-      = (long)&(sc_->regs->link) - new_cfa_;				\
++    (FS)->regs.reg[LINK_REGISTER_REGNUM].loc.offset			\
++      = (long)&(regs_->link) - new_cfa_;				\
+ 									\
+     (FS)->regs.reg[ARG_POINTER_REGNUM].how = REG_SAVED_OFFSET;		\
+-    (FS)->regs.reg[ARG_POINTER_REGNUM].loc.offset 			\
+-      = (long)&(sc_->regs->nip) - new_cfa_;				\
++    (FS)->regs.reg[ARG_POINTER_REGNUM].loc.offset			\
++      = (long)&(regs_->nip) - new_cfa_;					\
+     (FS)->retaddr_column = ARG_POINTER_REGNUM;				\
+     goto SUCCESS;							\
+   } while (0)

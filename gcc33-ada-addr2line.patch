@@ -1,0 +1,28 @@
+--- gcc-3.3/gcc/ada/adaint.c.ada-addr2line	2002-11-19 00:01:01.000000000 +0100
++++ gcc-3.3/gcc/ada/adaint.c	2003-02-02 18:32:07.000000000 +0100
+@@ -2244,17 +2244,6 @@ int _flush_cache()
+ }
+ #endif
+ 
+-#if defined (CROSS_COMPILE)  \
+-  || (! (defined (sparc) && defined (sun) && defined (__SVR4)) \
+-      && ! defined (linux) \
+-      && ! defined (hpux) \
+-      && ! (defined (__alpha__)  && defined (__osf__)) \
+-      && ! defined (__MINGW32__))
+-
+-/* Dummy function to satisfy g-trasym.o.  Currently Solaris sparc, HP/UX,
+-   GNU/Linux, Tru64 & Windows provide a non-dummy version of this procedure in
+-   libaddr2line.a.  */
+-
+ void
+ convert_addresses (addrs, n_addr, buf, len)
+      void *addrs ATTRIBUTE_UNUSED;
+@@ -2264,7 +2253,6 @@ convert_addresses (addrs, n_addr, buf, l
+ {
+   *len = 0;
+ }
+-#endif
+ 
+ #if defined (_WIN32)
+ int __gnat_argument_needs_quote = 1;

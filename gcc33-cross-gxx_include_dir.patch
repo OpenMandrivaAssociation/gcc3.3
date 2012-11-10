@@ -1,0 +1,79 @@
+--- gcc-3.3/gcc/configure.in.cross-gxx_include_dir	2003-04-07 16:19:44.000000000 -0400
++++ gcc-3.3/gcc/configure.in	2003-04-24 13:07:18.000000000 -0400
+@@ -171,9 +171,15 @@ if test x${gcc_gxx_include_dir} = x; the
+     gcc_gxx_include_dir='${libsubdir}/include/c++'
+   else
+     topsrcdir=${srcdir}/.. . ${srcdir}/../config.if
++    if test "${host}" != "${target}"; then
+ changequote(<<, >>)dnl
+-    gcc_gxx_include_dir="\$(libsubdir)/\$(unlibsubdir)/..\`echo \$(exec_prefix) | sed -e 's|^\$(prefix)||' -e 's|/[^/]*|/..|g'\`/include/"${libstdcxx_incdir}
++      gcc_gxx_include_dir="\$(libsubdir)/\$(unlibsubdir)/..\`echo \$(exec_prefix) | sed -e 's|^\$(prefix)||' -e 's|/[^/]*|/..|g'\`/\$(target_alias)/include/"${libstdcxx_incdir}
+ changequote([, ])dnl
++    else
++changequote(<<, >>)dnl
++      gcc_gxx_include_dir="\$(libsubdir)/\$(unlibsubdir)/..\`echo \$(exec_prefix) | sed -e 's|^\$(prefix)||' -e 's|/[^/]*|/..|g'\`/include/"${libstdcxx_incdir}
++changequote([, ])dnl
++    fi
+   fi
+ fi
+ 
+--- gcc-3.3/gcc/configure.cross-gxx_include_dir	2003-04-14 16:42:04.000000000 -0400
++++ gcc-3.3/gcc/configure	2003-04-24 13:07:18.000000000 -0400
+@@ -787,7 +787,11 @@ if test x${gcc_gxx_include_dir} = x; the
+     gcc_gxx_include_dir='${libsubdir}/include/c++'
+   else
+     topsrcdir=${srcdir}/.. . ${srcdir}/../config.if
+-    gcc_gxx_include_dir="\$(libsubdir)/\$(unlibsubdir)/..\`echo \$(exec_prefix) | sed -e 's|^\$(prefix)||' -e 's|/[^/]*|/..|g'\`/include/"${libstdcxx_incdir}
++    if test "${host}" != "${target}"; then
++      gcc_gxx_include_dir="\$(libsubdir)/\$(unlibsubdir)/..\`echo \$(exec_prefix) | sed -e 's|^\$(prefix)||' -e 's|/[^/]*|/..|g'\`/\$(target_alias)/include/"${libstdcxx_incdir}
++    else
++      gcc_gxx_include_dir="\$(libsubdir)/\$(unlibsubdir)/..\`echo \$(exec_prefix) | sed -e 's|^\$(prefix)||' -e 's|/[^/]*|/..|g'\`/include/"${libstdcxx_incdir}
++    fi
+   fi
+ fi
+ 
+--- gcc-3.3/libstdc++-v3/configure.cross-gxx_include_dir	2003-03-04 18:29:02.000000000 -0500
++++ gcc-3.3/libstdc++-v3/configure	2003-04-24 13:07:18.000000000 -0400
+@@ -23802,7 +23802,11 @@ echo "$ac_t""$version_specific_libs" 1>&
+ 
+ # Default case for install directory for include files.
+ if test $version_specific_libs = no && test $gxx_include_dir = no; then
+-  gxx_include_dir='$(prefix)'/include/c++/${gcc_version}
++  if test -n "$with_cross_host" && test x"$with_cross_host" != x"no"; then
++    gxx_include_dir='$(exec_prefix)/$(target_alias)'/include/c++/${gcc_version}
++  else
++    gxx_include_dir='$(prefix)'/include/c++/${gcc_version}
++  fi
+ fi
+ 
+ # Version-specific runtime libs processing.
+--- gcc-3.3/libstdc++-v3/acinclude.m4.cross-gxx_include_dir	2003-03-04 18:29:02.000000000 -0500
++++ gcc-3.3/libstdc++-v3/acinclude.m4	2003-04-24 13:07:18.000000000 -0400
+@@ -1942,7 +1942,11 @@ AC_MSG_RESULT($version_specific_libs)
+ 
+ # Default case for install directory for include files.
+ if test $version_specific_libs = no && test $gxx_include_dir = no; then
+-  gxx_include_dir='$(prefix)'/include/c++/${gcc_version}
++  if test -n "$with_cross_host" && test x"$with_cross_host" != x"no"; then
++    gxx_include_dir='$(exec_prefix)/$(target_alias)'/include/c++/${gcc_version}
++  else
++    gxx_include_dir='$(prefix)'/include/c++/${gcc_version}
++  fi
+ fi
+ 
+ # Version-specific runtime libs processing.
+--- gcc-3.3/configure.in.cross-gxx_include_dir	2003-03-09 18:14:53.000000000 -0500
++++ gcc-3.3/configure.in	2003-04-24 13:09:19.000000000 -0400
+@@ -1415,7 +1415,11 @@ if test x${gxx_include_dir} = x; then
+     gxx_include_dir='${libsubdir}/include/c++'
+   else
+     . ${srcdir}/config.if
+-    gxx_include_dir='${prefix}/include/'${libstdcxx_incdir}
++    if [ x${is_cross_compiler} = xyes ]; then
++      gxx_include_dir='${exec_prefix}/${target_alias}/include/'${libstdcxx_incdir}
++    else
++      gxx_include_dir='${prefix}/include/'${libstdcxx_incdir}
++    fi
+   fi
+ else
+   gxx_include_dir=${gxx_include_dir}

@@ -1,0 +1,11 @@
+--- gcc-3.3.2/gcc/gcse.c.no-store-motion	2004-03-04 12:25:12.000000000 +0100
++++ gcc-3.3.2/gcc/gcse.c	2004-03-04 15:00:51.000000000 +0100
+@@ -915,7 +915,7 @@ gcse_main (f, file)
+   end_alias_analysis ();
+   allocate_reg_info (max_reg_num (), FALSE, FALSE);
+ 
+-  if (!optimize_size && flag_gcse_sm)
++  if (0 && !optimize_size && flag_gcse_sm)
+     store_motion ();
+ 
+   /* Record where pseudo-registers are set.  */

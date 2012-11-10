@@ -1,0 +1,16 @@
+2004-11-24  Gwenole Beauchesne  <gbeauchesne@mandrakesoft.com>
+
+	* gcc/config/rs6000/linux64.h (TARGET_OS_CPP_BUILTINS): Define
+	__LP64__ and _LP64 in 64-bit mode.
+
+--- gcc-3.3.4/gcc/config/rs6000/linux64.h.ppc64-_LP64	2004-11-24 11:31:37.017724000 +0100
++++ gcc-3.3.4/gcc/config/rs6000/linux64.h	2004-11-24 16:52:58.646206836 +0100
+@@ -321,6 +321,8 @@
+ 	  builtin_define ("__PIC__");			\
+ 	  builtin_assert ("cpu=powerpc64");		\
+ 	  builtin_assert ("machine=powerpc64");		\
++	  builtin_define ("__LP64__");			\
++	  builtin_define ("_LP64");			\
+ 	}						\
+       else						\
+ 	{						\

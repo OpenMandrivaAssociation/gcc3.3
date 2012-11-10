@@ -1,0 +1,18 @@
+--- gcc-3.3/Makefile.in.pass-slibdir	2003-01-31 22:49:52.000000000 +0100
++++ gcc-3.3/Makefile.in	2003-02-02 13:29:38.000000000 +0100
+@@ -39,6 +39,7 @@ sysconfdir = @sysconfdir@
+ sharedstatedir = @sharedstatedir@
+ localstatedir = @localstatedir@
+ libdir = @libdir@
++slibdir = ${libdir}
+ includedir = @includedir@
+ oldincludedir = @oldincludedir@
+ infodir = @infodir@
+@@ -399,6 +400,7 @@ BASE_FLAGS_TO_PASS = \
+ 	"includedir=$(includedir)" \
+ 	"infodir=$(infodir)" \
+ 	"libdir=$(libdir)" \
++	"slibdir=$(slibdir)" \
+ 	"libexecdir=$(libexecdir)" \
+ 	"lispdir=$(lispdir)" \
+ 	"libstdcxx_incdir=$(libstdcxx_incdir)" \

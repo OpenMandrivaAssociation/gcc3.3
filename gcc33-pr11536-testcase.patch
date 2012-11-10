@@ -1,0 +1,47 @@
+2003-07-17  Eric Botcazou  <ebotcazou@libertysurf.fr>
+
+	* gcc.c-torture/execute/loop-16.c: New test.
+
+--- gcc-3.3.1/gcc/testsuite/gcc.c-torture/execute/loop-16.c.pr11536	2003-07-18 08:36:36.000000000 -0400
++++ gcc-3.3.1/gcc/testsuite/gcc.c-torture/execute/loop-16.c	2003-07-18 08:36:26.000000000 -0400
+@@ -0,0 +1,40 @@
++/* PR optimization/11536 */
++/* Origin: samal@kam.mff.cuni.cz <samal@kam.mff.cuni.cz> */
++/* Testcase by Andrew Pinsky <pinskia@physics.uc.edu> */
++
++/* Verify that the loop optimizer doesn't use moving targets
++   to calculate the number of iterations of a loop.  */
++
++extern void abort(void);
++
++void foo(int) __attribute__((__noinline__));
++
++void foo(int i)
++{
++  abort();
++}
++
++int main()
++{
++  int i;
++  int first= 0;
++  int last= 0;
++
++  while (last<3) {
++    last = first;
++
++    while (first<=last) {
++      first++;
++
++      for (i=0;i<3;i++)
++        last++;
++
++      if (last>10)
++        return 0;
++    }
++    
++    foo(first);
++  }
++
++  return 0;
++}

@@ -1,0 +1,45 @@
+--- gcc-3.3.6/gcc/config/ia64/linux.h.cross-inhibit_libc	2005-10-14 12:11:23.000000000 +0200
++++ gcc-3.3.6/gcc/config/ia64/linux.h	2005-10-14 12:11:24.000000000 +0200
+@@ -58,6 +67,7 @@ do {						\
+ /* Do code reading to identify a signal frame, and set the frame
+    state data appropriately.  See unwind-dw2.c for the structs.  */
+ 
++#ifndef inhibit_libc
+ #ifdef IN_LIBGCC2
+ #include <signal.h>
+ #include <sys/ucontext.h>
+@@ -207,3 +217,4 @@ do {						\
+     }
+ 
+ #endif /* IN_LIBGCC2 */
++#endif /* inhibit_libc */
+--- gcc-3.3.6/gcc/config/rs6000/linux.h.cross-inhibit_libc	2005-10-14 12:11:23.000000000 +0200
++++ gcc-3.3.6/gcc/config/rs6000/linux.h	2005-10-14 12:11:24.000000000 +0200
+@@ -107,6 +107,7 @@
+ /* Do code reading to identify a signal frame, and set the frame
+    state data appropriately.  See unwind-dw2.c for the structs.  */
+ 
++#ifndef inhibit_libc
+ #ifdef IN_LIBGCC2
+ #include <signal.h>
+ 
+@@ -186,3 +187,4 @@ enum { SIGNAL_FRAMESIZE = 64 };
+     (FS)->retaddr_column = CR0_REGNO;					\
+     goto SUCCESS;							\
+   } while (0)
++#endif
+--- gcc-3.3.6/gcc/config/rs6000/linux64.h.cross-inhibit_libc	2005-10-14 12:11:24.000000000 +0200
++++ gcc-3.3.6/gcc/config/rs6000/linux64.h	2005-10-14 12:17:36.000000000 +0200
+@@ -38,6 +38,7 @@
+ 
+ #endif
+ 
++#ifndef inhibit_libc
+ #ifdef IN_LIBGCC2
+ #undef TARGET_64BIT
+ #ifdef __powerpc64__
+@@ -753,3 +754,4 @@ enum { SIGNAL_FRAMESIZE = 64 };
+ 
+ #endif
+ 
++#endif /* inhibit_libc */

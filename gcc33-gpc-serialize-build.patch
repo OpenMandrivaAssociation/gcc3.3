@@ -1,0 +1,24 @@
+--- gcc-3.3.2/gcc/p/rts/Makefile.in.gpc-serialize-build	2003-04-22 18:31:24.000000000 +0200
++++ gcc-3.3.2/gcc/p/rts/Makefile.in	2004-02-11 15:30:29.000000000 +0100
+@@ -113,6 +113,9 @@ DUMMY=# Don't let configure substitute `
+         sharedlib. sharedlib.no sharedlib.@with_shared$(DUMMY)@ sharedlib.yes \
+         mostlyclean clean distclean extraclean maintainer-clean
+ 
++# FIXME: workaround parallel build problems for now
++.NOTPARALLEL: $(PAS_SRCS:%.pas=%.o) $(PAS_SRCS:%.pas=%.lo)
++
+ install:
+ 	@echo "There is currently no separate installation for the GNU Pascal Compiler's" >&2
+ 	@echo "Run Time System, because it is usually built and installed together" >&2
+--- gcc-3.3.2/gcc/p/utils/Makefile.gpc-serialize-build	2003-04-22 18:31:45.000000000 +0200
++++ gcc-3.3.2/gcc/p/utils/Makefile	2004-02-11 16:27:44.000000000 +0100
+@@ -48,6 +48,9 @@ PC_WITH_FLAGS=$(PC) --automake --executa
+ 
+ all: $(EXE) $(DOC)
+ 
++# FIXME: workaround parallel build problems for now
++.NOTPARALLEL: $(EXE)
++
+ # The Pascal source is not used, but we have to provide any.
+ # `-x Preprocessed-Pascal /dev/null' works as well, except on mingw.
+ needed-options: binobj.pas
