@@ -312,6 +312,7 @@ Conflicts:	gcc-cpp < 3.2.2-4mdk
 %endif
 # We want -pie support
 Requires:	%{cross_prefix}binutils >= 2.14.90.0.5-1mdk
+BuildRequires:	make
 BuildRequires:	%{cross_prefix}binutils >= 2.14.90.0.5-1mdk
 # Make sure gdb will understand DW_FORM_strp
 Conflicts:	gdb < 5.1.1
